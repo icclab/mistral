@@ -91,7 +91,6 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "create_delay_tolerant_workload")
     def test_post(self, mock_mtd):
         mock_mtd.return_value = DTW_DB
-
         resp = self.app.post_json('/v2/delay_tolerant_workload', DTW)
 
         self.assertEqual(201, resp.status_int)

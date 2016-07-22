@@ -432,6 +432,45 @@ def delete_cron_triggers(**kwargs):
     return IMPL.delete_cron_triggers(**kwargs)
 
 
+# Delay Tolerant Workload
+
+def get_delay_tolerant_workload(name):
+    return IMPL.get_delay_tolerant_workload(name)
+
+
+def load_delay_tolerant_workload(name):
+    """Unlike get_delay_tolerant_workload this method is 
+    allowed to return None."""
+    return IMPL.load_delay_tolerant_workload(name)
+
+
+def get_delay_tolerant_workloads(**kwargs):
+    return IMPL.get_delay_tolerant_workloads(**kwargs)
+
+
+def get_expired_delay_tolerant_workload(time):
+    return IMPL.get_expired_delay_tolerant_workload(time)
+
+
+def create_delay_tolerant_workload(values):
+    return IMPL.create_delay_tolerant_workload(values)
+
+
+def update_delay_tolerant_workload(name, values, query_filter=None):
+    return IMPL.update_delay_tolerant_workload(name, values, query_filter=query_filter)
+
+
+def create_or_update_delay_tolerant_workload(name, values):
+    return IMPL.create_or_update_delay_tolerant_workload(name, values)
+
+
+def delete_delay_tolerant_workload(name):
+    return IMPL.delete_delay_tolerant_workload(name)
+
+
+def delete_delay_tolerant_workloads(**kwargs):
+    return IMPL.delete_delay_tolerant_workloads(**kwargs)
+
 # Environments.
 
 def get_environment(name):

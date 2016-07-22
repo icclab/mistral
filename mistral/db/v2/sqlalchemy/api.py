@@ -1159,6 +1159,130 @@ def _get_cron_trigger(name):
     return _get_db_object_by_name(models.CronTrigger, name)
 
 
+# Delay Tolerant Workload
+
+def get_delay_tolerant_workload(name):
+    delay_tolerant_workload = _get_delay_tolerant_workload(name)
+
+    if not delay_tolerant_workload:
+        raise exc.DBEntityNotFoundError(
+            "Delay Tolerant Workload not found [name=%s]" % name
+        )
+
+    return delay_tolerant_workload
+
+
+def load_delay_tolerant_workload(name):
+    return _get_delay_tolerant_workload(name)
+
+
+def get_delay_tolerant_workloads(insecure=False, **kwargs):
+    return _get_collection_sorted_by_name(
+        models.DTWorkload,
+        insecure=insecure,
+        **kwargs
+    )
+
+
+@b.session_aware()
+def create_delay_tolerant_workload(values, session=None):
+    delay_tolerant_workload = models.DTWorkload()
+
+    delay_tolerant_workload.update(values)
+
+    try:
+        delay_tolerant_workload.save(session=session)
+    except db_exc.DBDuplicateEntry as e:
+        raise exc.DBDuplicateEntryError(
+            "Duplicate entry for delay tolerant workload %s: %s"
+            % (delay_tolerant_workload.name, e.columns)
+        )
+    # TODO(nmakhotkin): Remove this 'except' after fixing
+    # https://bugs.launchpad.net/oslo.db/+bug/1458583.
+    except db_exc.DBError as e:
+        raise exc.DBDuplicateEntryError(
+            "Duplicate entry for delay tolerant workload: %s" % e
+        )
+
+    return delay_tolerant_workload
+
+
+@b.session_aware()
+def update_delay_tolerant_workload(name, values, session=None, query_filter=None):
+    delay_tolerant_workload = _get_delay_tolerant_workload(name)
+
+    if not delay_tolerant_workloads:
+        raise exc.DBEntityNotFoundError(
+            "Delay tolerant workload not found [name=%s]" % name
+        )
+
+    if query_filter:
+        try:
+            # Execute the UPDATE statement with the query_filter as the WHERE.
+            specimen = models.DTWorkload(id=delay_tolerant_workload.id, **query_filter)
+
+            query = b.model_query(models.DTWorkload)
+
+            delay_tolerant_workload = query.update_on_match(
+                specimen=specimen,
+                surrogate_key='id',
+                values=values
+            )
+
+            return delay_tolerant_workload, 1
+
+        except oslo_sqlalchemy.update_match.NoRowsMatched:
+            LOG.debug(
+                "No rows matched for delay tolerant workload update call"
+                "[id=%s, values=%s, query_filter=%s", id, values, query_filter
+            )
+
+            return delay_tolerant_workload, 0
+
+    else:
+        delay_tolerant_workload.update(values.copy())
+
+        return delay_tolerant_workload, len(session.dirty)
+
+
+@b.session_aware()
+def create_or_update_delay_tolerant_workload(name, values, session=None):
+    delay_tolerant_workload = _get_delay_tolerant_workload(name)
+
+    if not delay_tolerant_workload:
+        return create_delay_tolerant_workload(values)
+    else:
+        updated, _ = update_delay_tolerant_workload(name, values)
+        return updated
+
+
+@b.session_aware()
+def delete_delay_tolerant_workload(name, session=None):
+    delay_tolerant_workload = _get_delay_tolerant_workload(name)
+
+    if not delay_tolerant_workload:
+        raise exc.DBEntityNotFoundError(
+            "Delay tolerant workload not found [name=%s]" % name
+        )
+
+    # Delete the delay tolerant workload by ID and get the affected row count.
+    table = models.DTWorkload.__table__
+    result = session.execute(
+        table.delete().where(table.c.id == delay_tolerant_workload.id)
+    )
+
+    return result.rowcount
+
+
+@b.session_aware()
+def delete_delay_tolerant_workloads(**kwargs):
+    return _delete_all(models.DTWorkload, **kwargs)
+
+
+def _get_delay_tolerant_workload(name):
+    return _get_db_object_by_name(models.DTWorkload, name)
+
+
 # Environments.
 
 def get_environment(name):

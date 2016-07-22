@@ -390,6 +390,58 @@ class CronTrigger(mb.MistralSecureModelBase):
 
         return d
 
+class DTWorkload(mb.MistralSecureModelBase):
+    """Contains info about delay tolerant workload."""
+
+    __tablename__ = 'delay_tolerant_workload'
+
+    __table_args__ = (
+        sa.UniqueConstraint('name', 'project_id'),
+        sa.UniqueConstraint(
+            'workflow_input_hash', 'workflow_name', 'project_id',
+            'workflow_params_hash', 'deadline', 'job_duration'
+        ),
+        # sa.Index(
+        #     '%s_next_execution_time' % __tablename__,
+        #     'next_execution_time'
+        # ),
+        sa.Index('%s_project_id' % __tablename__, 'project_id'),
+        sa.Index('%s_scope' % __tablename__, 'scope'),
+        sa.Index('%s_workflow_name' % __tablename__, 'workflow_name'),
+    )
+
+    id = mb.id_column()
+    name = sa.Column(sa.String(200))
+    deadline = sa.Column(sa.DateTime)
+    # job duration specified in seconds
+    job_duration = sa.Column(sa.Integer)
+    workflow_name = sa.Column(sa.String(80))
+
+    workflow_id = sa.Column(
+        sa.String(36),
+        sa.ForeignKey(WorkflowDefinition.id)
+    )
+    workflow = relationship('WorkflowDefinition', lazy='joined')
+
+    workflow_params = sa.Column(st.JsonDictType())
+    workflow_params_hash = sa.Column(
+        sa.CHAR(64),
+        default=_get_hash_function_by('workflow_params')
+    )
+    workflow_input = sa.Column(st.JsonDictType())
+    workflow_input_hash = sa.Column(
+        sa.CHAR(64),
+        default=_get_hash_function_by('workflow_input')
+    )
+
+    trust_id = sa.Column(sa.String(80))
+
+    def to_dict(self):
+        d = super(DTWorkload, self).to_dict()
+
+        mb.datetime_to_str(d, 'deadline')
+
+        return d
 
 # Register all hooks related to secure models.
 mb.register_secure_model_hooks()

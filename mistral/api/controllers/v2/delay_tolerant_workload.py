@@ -137,15 +137,15 @@ class DelayTolerantWorkloadController(rest.RestController):
                          wtypes.text, wtypes.text, types.uuid, types.jsontype,
                          types.jsontype, SCOPE_TYPES,
                          wtypes.text, wtypes.text)
-    def get_all(self, deadline, job_duration,
+    def get_all(self, deadline=None, job_duration=None,
                 marker=None, limit=None, sort_keys='created_at',
                 sort_dirs='asc', fields='', name=None, workflow_name=None,
                 workflow_id=None, workflow_input=None, workflow_params=None,
                 scope=None, created_at=None, updated_at=None):
         """Return all cron triggers.
 
-        :param deadline: Required.
-        :param job_duration: Required.
+        :param deadline: Optional.
+        :param job_duration: =Optional.
         :param marker: Optional. Pagination marker for large data sets.
         :param limit: Optional. Maximum number of resources to return in a
                       single result. Default value is None for backward

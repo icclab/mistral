@@ -1208,7 +1208,8 @@ def create_delay_tolerant_workload(values, session=None):
 
 
 @b.session_aware()
-def update_delay_tolerant_workload(name, values, session=None, query_filter=None):
+def update_delay_tolerant_workload(name, values, session=None,
+                                   query_filter=None):
     delay_tolerant_workload = _get_delay_tolerant_workload(name)
 
     if not delay_tolerant_workload:
@@ -1219,7 +1220,8 @@ def update_delay_tolerant_workload(name, values, session=None, query_filter=None
     if query_filter:
         try:
             # Execute the UPDATE statement with the query_filter as the WHERE.
-            specimen = models.DTWorkload(id=delay_tolerant_workload.id, **query_filter)
+            specimen = models.DTWorkload(id=delay_tolerant_workload.id,
+                                         **query_filter)
 
             query = b.model_query(models.DTWorkload)
 

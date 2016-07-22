@@ -1380,9 +1380,9 @@ DELAY_TOLERANT_WORKLOADS = [
         'workflow_name': 'my_wf',
         'workflow_id': None,
         'workflow_input': {},
-        'deadline':         
+        'deadline':
         datetime.datetime.now() + datetime.timedelta(days=1),
-        'job_duration': 3600, # seconds
+        'job_duration': 3600,  # seconds
         'scope': 'private',
         'project_id': '<default-project>'
     },
@@ -1391,9 +1391,9 @@ DELAY_TOLERANT_WORKLOADS = [
         'workflow_name': 'my_wf',
         'workflow_id': None,
         'workflow_input': {'param': 'val'},
-        'deadline':         
+        'deadline':
         datetime.datetime.now() + datetime.timedelta(days=1),
-        'job_duration': 3600, # seconds
+        'job_duration': 3600,  # seconds
         'scope': 'private',
         'project_id': '<default-project>'
     },
@@ -1410,7 +1410,8 @@ class DTWorkloadTest(SQLAlchemyTest):
             dtw['workflow_id'] = self.wf.id
 
     def test_create_and_get_and_load_dtw(self):
-        created = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
+        created = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
 
         fetched = db_api.get_delay_tolerant_workload(created.name)
 
@@ -1420,7 +1421,8 @@ class DTWorkloadTest(SQLAlchemyTest):
 
         self.assertEqual(created, fetched)
 
-        self.assertIsNone(db_api.load_delay_tolerant_workload("not-existing-dtw"))
+        self.assertIsNone(db_api.load_delay_tolerant_workload(
+            "not-existing-dtw"))
 
     def test_create_delay_tolerant_workload_duplicate_without_auth(self):
         cfg.CONF.set_default('auth_enable', False, group='pecan')
@@ -1433,7 +1435,8 @@ class DTWorkloadTest(SQLAlchemyTest):
         )
 
     def test_update_delay_tolerant_workload(self):
-        created = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
+        created = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
 
         self.assertIsNone(created.updated_at)
 
@@ -1443,7 +1446,6 @@ class DTWorkloadTest(SQLAlchemyTest):
         )
 
         self.assertEqual(7200, updated.job_duration)
-        # TODO: check what this does
         self.assertEqual(1, updated_count)
 
         fetched = db_api.get_delay_tolerant_workload(created.name)
@@ -1476,7 +1478,8 @@ class DTWorkloadTest(SQLAlchemyTest):
 
         self.assertIsNone(db_api.load_delay_tolerant_workload(name))
 
-        created = db_api.create_or_update_delay_tolerant_workload(name, CRON_TRIGGERS[0])
+        created = db_api.create_or_update_delay_tolerant_workload(
+            name, DELAY_TOLERANT_WORKLOADS[0])
 
         self.assertIsNotNone(created)
         self.assertIsNotNone(created.name)
@@ -1486,31 +1489,34 @@ class DTWorkloadTest(SQLAlchemyTest):
             {'job_duration': 7200}
         )
 
-        self.assertEqual( 7200, updated.job_duration)
+        self.assertEqual(7200, updated.job_duration)
 
         fetched = db_api.get_delay_tolerant_workload(created.name)
 
         self.assertEqual(updated, fetched)
 
     def test_get_delay_tolerant_workload(self):
-        created0 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
-        created1 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[1])
+        created0 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
+        created1 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[1])
 
-        fetched = db_api.get_delay_tolerant_workloads(job_duration= 3600)
+        fetched = db_api.get_delay_tolerant_workloads(job_duration=3600)
 
         self.assertEqual(2, len(fetched))
         self.assertEqual(created0, fetched[0])
         self.assertEqual(created1, fetched[1])
 
     def test_get_delay_tolerant_workload_other_tenant(self):
-        created0 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
+        created0 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
 
         # Switch to another tenant.
         auth_context.set_ctx(user_context)
 
         fetched = db_api.get_delay_tolerant_workloads(
             insecure=True,
-            job_duration= 3600,
+            job_duration=3600,
             project_id=security.DEFAULT_PROJECT_ID
         )
 
@@ -1518,7 +1524,8 @@ class DTWorkloadTest(SQLAlchemyTest):
         self.assertEqual(created0, fetched[0])
 
     def test_delete_delay_tolerant_workload(self):
-        created = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
+        created = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
 
         fetched = db_api.get_delay_tolerant_workload(created.name)
 
@@ -1534,12 +1541,12 @@ class DTWorkloadTest(SQLAlchemyTest):
         )
 
     def test_delay_tolerant_workload_repr(self):
-        s = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0]).__repr__()
+        s = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0]).__repr__()
 
         self.assertIn('DTWorkload ', s)
         self.assertIn("'job_duration': 3600", s)
         self.assertIn("'name': 'dtw1'", s)
-
 
 
 ENVIRONMENTS = [

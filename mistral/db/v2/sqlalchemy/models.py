@@ -390,6 +390,7 @@ class CronTrigger(mb.MistralSecureModelBase):
 
         return d
 
+
 class DTWorkload(mb.MistralSecureModelBase):
     """Contains info about delay tolerant workload."""
 

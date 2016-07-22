@@ -439,8 +439,7 @@ def get_delay_tolerant_workload(name):
 
 
 def load_delay_tolerant_workload(name):
-    """Unlike get_delay_tolerant_workload this method is 
-    allowed to return None."""
+    """Unlike get_delay_tolerant_workload this can return None."""
     return IMPL.load_delay_tolerant_workload(name)
 
 
@@ -456,8 +455,10 @@ def create_delay_tolerant_workload(values):
     return IMPL.create_delay_tolerant_workload(values)
 
 
-def update_delay_tolerant_workload(name, values, query_filter=None):
-    return IMPL.update_delay_tolerant_workload(name, values, query_filter=query_filter)
+def update_delay_tolerant_workload(name, values,
+                                   query_filter=None):
+    return IMPL.update_delay_tolerant_workload(name, values,
+                                               query_filter=query_filter)
 
 
 def create_or_update_delay_tolerant_workload(name, values):
@@ -472,6 +473,7 @@ def delete_delay_tolerant_workloads(**kwargs):
     return IMPL.delete_delay_tolerant_workloads(**kwargs)
 
 # Environments.
+
 
 def get_environment(name):
     return IMPL.get_environment(name)

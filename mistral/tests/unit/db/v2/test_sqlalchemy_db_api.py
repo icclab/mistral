@@ -1409,53 +1409,52 @@ class DTWorkloadTest(SQLAlchemyTest):
         for dtw in DELAY_TOLERANT_WORKLOADS:
             dtw['workflow_id'] = self.wf.id
 
-#### FINISHED HERE...
-
     def test_create_and_get_and_load_dtw(self):
-        created = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+        created = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
 
-        fetched = db_api.get_cron_trigger(created.name)
-
-        self.assertEqual(created, fetched)
-
-        fetched = db_api.load_cron_trigger(created.name)
+        fetched = db_api.get_delay_tolerant_workload(created.name)
 
         self.assertEqual(created, fetched)
 
-        self.assertIsNone(db_api.load_cron_trigger("not-existing-trigger"))
+        fetched = db_api.load_delay_tolerant_workload(created.name)
 
-    def test_create_cron_trigger_duplicate_without_auth(self):
+        self.assertEqual(created, fetched)
+
+        self.assertIsNone(db_api.load_delay_tolerant_workload("not-existing-dtw"))
+
+    def test_create_delay_tolerant_workload_duplicate_without_auth(self):
         cfg.CONF.set_default('auth_enable', False, group='pecan')
-        db_api.create_cron_trigger(CRON_TRIGGERS[0])
+        db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
 
         self.assertRaises(
             exc.DBDuplicateEntryError,
-            db_api.create_cron_trigger,
-            CRON_TRIGGERS[0]
+            db_api.create_delay_tolerant_workload,
+            DELAY_TOLERANT_WORKLOAD[0]
         )
 
-    def test_update_cron_trigger(self):
-        created = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+    def test_update_delay_tolerant_workload(self):
+        created = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
 
         self.assertIsNone(created.updated_at)
 
-        updated, updated_count = db_api.update_cron_trigger(
+        updated, updated_count = db_api.update_delay_tolerant_workload(
             created.name,
-            {'pattern': '*/1 * * * *'}
+            {'job_duration': 7200}
         )
 
-        self.assertEqual('*/1 * * * *', updated.pattern)
+        self.assertEqual(7200, updated.job_duration)
+        # TODO: check what this does
         self.assertEqual(1, updated_count)
 
-        fetched = db_api.get_cron_trigger(created.name)
+        fetched = db_api.get_delay_tolerant_workload(created.name)
 
         self.assertEqual(updated, fetched)
-        self.assertIsNotNone(fetched.updated_at)
+        self.assertIsNotNone(fetched.job_duration)
 
-        # Test update_cron_trigger and query_filter with results
-        updated, updated_count = db_api.update_cron_trigger(
+        # Test update_delay_tolerant_workload and query_filter with results
+        updated, updated_count = db_api.update_delay_tolerant_workload(
             created.name,
-            {'pattern': '*/1 * * * *'},
+            {'job_duration': 7200},
             query_filter={'name': created.name}
         )
 
@@ -1463,83 +1462,83 @@ class DTWorkloadTest(SQLAlchemyTest):
         self.assertEqual(1, updated_count)
 
         # Test update_cron_trigger and query_filter without results
-        updated, updated_count = db_api.update_cron_trigger(
+        updated, updated_count = db_api.update_delay_tolerant_workload(
             created.name,
-            {'pattern': '*/1 * * * *'},
+            {'job_duration': 7200},
             query_filter={'name': 'not-existing-id'}
         )
 
         self.assertEqual(updated, updated)
         self.assertEqual(0, updated_count)
 
-    def test_create_or_update_cron_trigger(self):
+    def test_create_or_update_delay_tolerant_workload(self):
         name = 'not-existing-id'
 
-        self.assertIsNone(db_api.load_cron_trigger(name))
+        self.assertIsNone(db_api.load_delay_tolerant_workload(name))
 
-        created = db_api.create_or_update_cron_trigger(name, CRON_TRIGGERS[0])
+        created = db_api.create_or_update_delay_tolerant_workload(name, CRON_TRIGGERS[0])
 
         self.assertIsNotNone(created)
         self.assertIsNotNone(created.name)
 
-        updated = db_api.create_or_update_cron_trigger(
+        updated = db_api.create_or_update_delay_tolerant_workload(
             created.name,
-            {'pattern': '*/1 * * * *'}
+            {'job_duration': 7200}
         )
 
-        self.assertEqual('*/1 * * * *', updated.pattern)
+        self.assertEqual( 7200, updated.job_duration)
 
-        fetched = db_api.get_cron_trigger(created.name)
+        fetched = db_api.get_delay_tolerant_workload(created.name)
 
         self.assertEqual(updated, fetched)
 
-    def test_get_cron_triggers(self):
-        created0 = db_api.create_cron_trigger(CRON_TRIGGERS[0])
-        created1 = db_api.create_cron_trigger(CRON_TRIGGERS[1])
+    def test_get_delay_tolerant_workload(self):
+        created0 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
+        created1 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[1])
 
-        fetched = db_api.get_cron_triggers(pattern='* * * * *')
+        fetched = db_api.get_delay_tolerant_workload(job_duration= 3600)
 
         self.assertEqual(2, len(fetched))
         self.assertEqual(created0, fetched[0])
         self.assertEqual(created1, fetched[1])
 
-    def test_get_cron_triggers_other_tenant(self):
-        created0 = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+    def test_get_delay_tolerant_workload_other_tenant(self):
+        created0 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
 
         # Switch to another tenant.
         auth_context.set_ctx(user_context)
 
-        fetched = db_api.get_cron_triggers(
+        fetched = db_api.get_delay_tolerant_workloads(
             insecure=True,
-            pattern='* * * * *',
+            job_duration= 3600,
             project_id=security.DEFAULT_PROJECT_ID
         )
 
         self.assertEqual(1, len(fetched))
         self.assertEqual(created0, fetched[0])
 
-    def test_delete_cron_trigger(self):
-        created = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+    def test_delete_delay_tolerant_workload(self):
+        created = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
 
-        fetched = db_api.get_cron_trigger(created.name)
+        fetched = db_api.get_delay_tolerant_workload(created.name)
 
         self.assertEqual(created, fetched)
 
-        rowcount = db_api.delete_cron_trigger(created.name)
+        rowcount = db_api.delete_delay_tolerant_workload(created.name)
 
         self.assertEqual(1, rowcount)
         self.assertRaises(
             exc.DBEntityNotFoundError,
-            db_api.get_cron_trigger,
+            db_api.get_delay_tolerant_workload,
             created.name
         )
 
-    def test_cron_trigger_repr(self):
-        s = db_api.create_cron_trigger(CRON_TRIGGERS[0]).__repr__()
+    def test_delay_tolerant_workload_repr(self):
+        s = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0]).__repr__()
 
-        self.assertIn('CronTrigger ', s)
-        self.assertIn("'pattern': '* * * * *'", s)
-        self.assertIn("'name': 'trigger1'", s)
+        self.assertIn('DTWorkload ', s)
+        self.assertIn("'job_duration': 3600", s)
+        self.assertIn("'name': 'dtw1'", s)
 
 
 

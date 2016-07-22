@@ -50,6 +50,20 @@ class DelayTolerantWorkload(resource.Resource):
     created_at = wtypes.text
     updated_at = wtypes.text
 
+    @classmethod
+    def sample(cls):
+        return cls(id='123e4567-e89b-12d3-a456-426655440000',
+                   name='DTW_test',
+                   workflow_name='my_wf',
+                   workflow_id='123e4567-e89b-12d3-a456-426655441111',
+                   workflow_input={},
+                   workflow_params={},
+                   scope='private',
+                   deadline='2016-07-23T00:00:00',
+                   job_duration=4,
+                   created_at='1970-01-01T00:00:00.000000',
+                   updated_at='1970-01-01T00:00:00.000000')
+
 
 class DelayTolerantWorkloads(resource.ResourceList):
     """A collection of delay tolerant workloads."""
@@ -57,13 +71,13 @@ class DelayTolerantWorkloads(resource.ResourceList):
     delay_tolerant_workloads = [DelayTolerantWorkload]
 
     def __init__(self, **kwargs):
-        self._type = 'cron_triggers'
+        self._type = 'delay_tolerant_workloads'
 
         super(DelayTolerantWorkloads, self).__init__(**kwargs)
 
     @classmethod
     def sample(cls):
-        return cls(cron_triggers=[DelayTolerantWorkload.sample()])
+        return cls(delay_tolerant_workloads=[DelayTolerantWorkload.sample()])
 
 
 class DelayTolerantWorkloadController(rest.RestController):
@@ -75,8 +89,7 @@ class DelayTolerantWorkloadController(rest.RestController):
         acl.enforce('delay_tolerant_workload:get', context.ctx())
         LOG.info('Fetching Delay Tolerant Workload [name=%s]..' % name)
 
-        # TODO(brunograz) - Change db_api call
-        db_model = db_api.get_cron_trigger(name)
+        db_model = db_api.get_delay_tolerant_workload(name)
 
         return DelayTolerantWorkload.from_dict(db_model.to_dict())
 
@@ -116,8 +129,7 @@ class DelayTolerantWorkloadController(rest.RestController):
         acl.enforce('delay_tolerant_workload:delete', context.ctx())
         LOG.info("Deleting delay tolerant workload [name=%s]" % name)
 
-        # TODO(brunograz) - Change db_api call
-        db_api.delete_cron_trigger(name)
+        db_api.delete_delay_tolerant_workload(name)
 
     @wsme_pecan.wsexpose(DelayTolerantWorkload, wtypes.text,
                          wtypes.IntegerType(minimum=1), types.uuid, int,
@@ -163,7 +175,7 @@ class DelayTolerantWorkloadController(rest.RestController):
         :param updated_at: Optional. Keep only resources with specific latest
                            update time and date.
         """
-        acl.enforce('cron_triggers:list', context.ctx())
+        acl.enforce('delay_tolerant_workloads:list', context.ctx())
 
         filters = rest_utils.filters_to_dict(
             created_at=created_at,
@@ -186,9 +198,8 @@ class DelayTolerantWorkloadController(rest.RestController):
         return rest_utils.get_all(
             DelayTolerantWorkloads,
             DelayTolerantWorkload,
-            # TODO(brunograz), change API calls
-            db_api.get_cron_triggers,
-            db_api.get_cron_trigger,
+            db_api.get_delay_tolerant_workloads,
+            db_api.get_delay_tolerant_workload,
             resource_function=None,
             marker=marker,
             limit=limit,

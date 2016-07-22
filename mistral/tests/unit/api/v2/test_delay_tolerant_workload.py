@@ -72,7 +72,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "get_delay_tolerant_workload", MOCK_DTW)
     def test_get(self):
         resp = self.app.get(
-                '/v2/delay_tolerant_workload/delay_tolerant_workload'
+                '/v2/delay_tolerant_workload/dtw_test'
         )
 
         self.assertEqual(200, resp.status_int)

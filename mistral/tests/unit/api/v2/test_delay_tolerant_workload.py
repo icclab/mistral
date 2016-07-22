@@ -124,7 +124,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     )
     def test_post_same_wf_and_input(self):
         dtw = DTW.copy()
-        dtw['name'] = 'some_trigger_name'
+        dtw['name'] = 'some_dtw_name'
 
         resp = self.app.post_json(
             '/v2/delay_tolerant_workloads', dtw, expect_errors=True
@@ -169,4 +169,4 @@ class TestDelayTolerantWorkloadController(base.APITest):
 
         self.assertEqual(200, resp.status_int)
 
-        self.assertEqual(0, len(resp.json['delay_tolerant_workload']))
+        self.assertEqual(0, len(resp.json['delay_tolerant_workloads']))

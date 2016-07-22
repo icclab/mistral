@@ -25,7 +25,7 @@ from mistral.api.controllers import resource
 from mistral.api.controllers.v2 import types
 from mistral import context
 from mistral.db.v2 import api as db_api
-from mistral.services import triggers
+from mistral.services import delay_tolerant_workload as dtw
 from mistral.utils import rest_utils
 
 LOG = logging.getLogger(__name__)
@@ -109,14 +109,13 @@ class DelayTolerantWorkloadController(rest.RestController):
         values = delay_tolerant_workload.to_dict()
 
         # TODO(brunograz) - Change trigger model
-        db_model = triggers.create_cron_trigger(
+        db_model = dtw.create_delay_tolerant_workload(
             values['name'],
             values.get('workflow_name'),
             values.get('workflow_input'),
             values.get('workflow_params'),
-            values.get('pattern'),
-            values.get('first_execution_time'),
-            values.get('remaining_executions'),
+            values.get('deadline'),
+            values.get('job_duration'),
             workflow_id=values.get('workflow_id')
         )
 
@@ -131,7 +130,7 @@ class DelayTolerantWorkloadController(rest.RestController):
 
         db_api.delete_delay_tolerant_workload(name)
 
-    @wsme_pecan.wsexpose(DelayTolerantWorkload, wtypes.text,
+    @wsme_pecan.wsexpose(DelayTolerantWorkloads, wtypes.text,
                          wtypes.IntegerType(minimum=1), types.uuid, int,
                          types.uniquelist, types.list, types.uniquelist,
                          wtypes.text, wtypes.text, types.uuid, types.jsontype,

@@ -1211,7 +1211,7 @@ def create_delay_tolerant_workload(values, session=None):
 def update_delay_tolerant_workload(name, values, session=None, query_filter=None):
     delay_tolerant_workload = _get_delay_tolerant_workload(name)
 
-    if not delay_tolerant_workloads:
+    if not delay_tolerant_workload:
         raise exc.DBEntityNotFoundError(
             "Delay tolerant workload not found [name=%s]" % name
         )

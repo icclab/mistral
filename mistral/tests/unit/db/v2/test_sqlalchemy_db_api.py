@@ -1429,7 +1429,7 @@ class DTWorkloadTest(SQLAlchemyTest):
         self.assertRaises(
             exc.DBDuplicateEntryError,
             db_api.create_delay_tolerant_workload,
-            DELAY_TOLERANT_WORKLOAD[0]
+            DELAY_TOLERANT_WORKLOADS[0]
         )
 
     def test_update_delay_tolerant_workload(self):
@@ -1496,7 +1496,7 @@ class DTWorkloadTest(SQLAlchemyTest):
         created0 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[0])
         created1 = db_api.create_delay_tolerant_workload(DELAY_TOLERANT_WORKLOADS[1])
 
-        fetched = db_api.get_delay_tolerant_workload(job_duration= 3600)
+        fetched = db_api.get_delay_tolerant_workloads(job_duration= 3600)
 
         self.assertEqual(2, len(fetched))
         self.assertEqual(created0, fetched[0])

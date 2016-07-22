@@ -248,6 +248,7 @@ class DbTestCase(BaseTest):
                     db_api_v2.delete_event_triggers()
                     db_api_v2.delete_executions()
                     db_api_v2.delete_workbooks()
+                    db_api_v2.delete_delay_tolerant_workloads()
                     db_api_v2.delete_cron_triggers()
                     db_api_v2.delete_workflow_definitions()
                     db_api_v2.delete_environments()

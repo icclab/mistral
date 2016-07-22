@@ -1374,6 +1374,175 @@ class CronTriggerTest(SQLAlchemyTest):
         self.assertIn("'name': 'trigger1'", s)
 
 
+DELAY_TOLERANT_WORKLOADS = [
+    {
+        'name': 'dtw1',
+        'workflow_name': 'my_wf',
+        'workflow_id': None,
+        'workflow_input': {},
+        'deadline':         
+        datetime.datetime.now() + datetime.timedelta(days=1),
+        'job_duration': 3600, # seconds
+        'scope': 'private',
+        'project_id': '<default-project>'
+    },
+    {
+        'name': 'dtw2',
+        'workflow_name': 'my_wf',
+        'workflow_id': None,
+        'workflow_input': {'param': 'val'},
+        'deadline':         
+        datetime.datetime.now() + datetime.timedelta(days=1),
+        'job_duration': 3600, # seconds
+        'scope': 'private',
+        'project_id': '<default-project>'
+    },
+]
+
+
+class DTWorkloadTest(SQLAlchemyTest):
+    def setUp(self):
+        super(DTWorkloadTest, self).setUp()
+
+        self.wf = db_api.create_workflow_definition({'name': 'my_wf'})
+
+        for dtw in DELAY_TOLERANT_WORKLOADS:
+            dtw['workflow_id'] = self.wf.id
+
+#### FINISHED HERE...
+
+    def test_create_and_get_and_load_dtw(self):
+        created = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+
+        fetched = db_api.get_cron_trigger(created.name)
+
+        self.assertEqual(created, fetched)
+
+        fetched = db_api.load_cron_trigger(created.name)
+
+        self.assertEqual(created, fetched)
+
+        self.assertIsNone(db_api.load_cron_trigger("not-existing-trigger"))
+
+    def test_create_cron_trigger_duplicate_without_auth(self):
+        cfg.CONF.set_default('auth_enable', False, group='pecan')
+        db_api.create_cron_trigger(CRON_TRIGGERS[0])
+
+        self.assertRaises(
+            exc.DBDuplicateEntryError,
+            db_api.create_cron_trigger,
+            CRON_TRIGGERS[0]
+        )
+
+    def test_update_cron_trigger(self):
+        created = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+
+        self.assertIsNone(created.updated_at)
+
+        updated, updated_count = db_api.update_cron_trigger(
+            created.name,
+            {'pattern': '*/1 * * * *'}
+        )
+
+        self.assertEqual('*/1 * * * *', updated.pattern)
+        self.assertEqual(1, updated_count)
+
+        fetched = db_api.get_cron_trigger(created.name)
+
+        self.assertEqual(updated, fetched)
+        self.assertIsNotNone(fetched.updated_at)
+
+        # Test update_cron_trigger and query_filter with results
+        updated, updated_count = db_api.update_cron_trigger(
+            created.name,
+            {'pattern': '*/1 * * * *'},
+            query_filter={'name': created.name}
+        )
+
+        self.assertEqual(updated, fetched)
+        self.assertEqual(1, updated_count)
+
+        # Test update_cron_trigger and query_filter without results
+        updated, updated_count = db_api.update_cron_trigger(
+            created.name,
+            {'pattern': '*/1 * * * *'},
+            query_filter={'name': 'not-existing-id'}
+        )
+
+        self.assertEqual(updated, updated)
+        self.assertEqual(0, updated_count)
+
+    def test_create_or_update_cron_trigger(self):
+        name = 'not-existing-id'
+
+        self.assertIsNone(db_api.load_cron_trigger(name))
+
+        created = db_api.create_or_update_cron_trigger(name, CRON_TRIGGERS[0])
+
+        self.assertIsNotNone(created)
+        self.assertIsNotNone(created.name)
+
+        updated = db_api.create_or_update_cron_trigger(
+            created.name,
+            {'pattern': '*/1 * * * *'}
+        )
+
+        self.assertEqual('*/1 * * * *', updated.pattern)
+
+        fetched = db_api.get_cron_trigger(created.name)
+
+        self.assertEqual(updated, fetched)
+
+    def test_get_cron_triggers(self):
+        created0 = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+        created1 = db_api.create_cron_trigger(CRON_TRIGGERS[1])
+
+        fetched = db_api.get_cron_triggers(pattern='* * * * *')
+
+        self.assertEqual(2, len(fetched))
+        self.assertEqual(created0, fetched[0])
+        self.assertEqual(created1, fetched[1])
+
+    def test_get_cron_triggers_other_tenant(self):
+        created0 = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+
+        # Switch to another tenant.
+        auth_context.set_ctx(user_context)
+
+        fetched = db_api.get_cron_triggers(
+            insecure=True,
+            pattern='* * * * *',
+            project_id=security.DEFAULT_PROJECT_ID
+        )
+
+        self.assertEqual(1, len(fetched))
+        self.assertEqual(created0, fetched[0])
+
+    def test_delete_cron_trigger(self):
+        created = db_api.create_cron_trigger(CRON_TRIGGERS[0])
+
+        fetched = db_api.get_cron_trigger(created.name)
+
+        self.assertEqual(created, fetched)
+
+        rowcount = db_api.delete_cron_trigger(created.name)
+
+        self.assertEqual(1, rowcount)
+        self.assertRaises(
+            exc.DBEntityNotFoundError,
+            db_api.get_cron_trigger,
+            created.name
+        )
+
+    def test_cron_trigger_repr(self):
+        s = db_api.create_cron_trigger(CRON_TRIGGERS[0]).__repr__()
+
+        self.assertIn('CronTrigger ', s)
+        self.assertIn("'pattern': '* * * * *'", s)
+        self.assertIn("'name': 'trigger1'", s)
+
+
+
 ENVIRONMENTS = [
     {
         'name': 'env1',

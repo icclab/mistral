@@ -86,7 +86,7 @@ class DelayTolerantWorkloadController(rest.RestController):
     def get(self, name):
         """Returns the named delay_tolerant_workload."""
 
-        acl.enforce('delay_tolerant_workload:get', context.ctx())
+        acl.enforce('delay_tolerant_workloads:get', context.ctx())
         LOG.info('Fetching Delay Tolerant Workload [name=%s]..' % name)
 
         db_model = db_api.get_delay_tolerant_workload(name)
@@ -102,7 +102,7 @@ class DelayTolerantWorkloadController(rest.RestController):
     def post(self, delay_tolerant_workload):
         """Creates a new delay tolerant workload."""
 
-        acl.enforce('delay_tolerant_workload:create', context.ctx())
+        acl.enforce('delay_tolerant_workloads:create', context.ctx())
         LOG.info('Creating new delay tolerant workload: %s' %
                  delay_tolerant_workload)
 
@@ -126,7 +126,7 @@ class DelayTolerantWorkloadController(rest.RestController):
     @wsme_pecan.wsexpose(None, wtypes.text, status_code=204)
     def delete(self, name):
         """Delete cron trigger."""
-        acl.enforce('delay_tolerant_workload:delete', context.ctx())
+        acl.enforce('delay_tolerant_workloads:delete', context.ctx())
         LOG.info("Deleting delay tolerant workload [name=%s]" % name)
 
         db_api.delete_delay_tolerant_workload(name)

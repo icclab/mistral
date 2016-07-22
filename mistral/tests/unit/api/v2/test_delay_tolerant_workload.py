@@ -81,7 +81,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "get_delay_tolerant_workload", MOCK_NOT_FOUND)
     def test_get_not_found(self):
         resp = self.app.get(
-            '/v2/delay_tolerant_workload/delay_tolerant_workload',
+            '/v2/delay_tolerant_workloads/dtw_test',
             expect_errors=True
         )
 
@@ -91,7 +91,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "create_delay_tolerant_workload")
     def test_post(self, mock_mtd):
         mock_mtd.return_value = DTW_DB
-        resp = self.app.post_json('/v2/delay_tolerant_workload', DTW)
+        resp = self.app.post_json('/v2/delay_tolerant_workloads', DTW)
 
         self.assertEqual(201, resp.status_int)
         self.assertDictEqual(DTW, resp.json)
@@ -111,7 +111,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     )
     def test_post_dup(self):
         resp = self.app.post_json(
-            '/v2/delay_tolerant_workload', DTW, expect_errors=True
+            '/v2/delay_tolerant_workloads', DTW, expect_errors=True
         )
 
         self.assertEqual(409, resp.status_int)
@@ -127,7 +127,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
         dtw['name'] = 'some_trigger_name'
 
         resp = self.app.post_json(
-            '/v2/delay_tolerant_workload', dtw, expect_errors=True
+            '/v2/delay_tolerant_workloads', dtw, expect_errors=True
         )
 
         self.assertEqual(409, resp.status_int)
@@ -136,7 +136,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "delete_delay_tolerant_workload", MOCK_DELETE)
     def test_delete(self):
         resp = self.app.delete(
-                '/v2/delay_tolerant_workload/delay_tolerant_workload'
+                '/v2/delay_tolerant_workloads/dtw_test'
         )
 
         self.assertEqual(204, resp.status_int)
@@ -148,24 +148,24 @@ class TestDelayTolerantWorkloadController(base.APITest):
     )
     def test_delete_not_found(self):
         resp = self.app.delete(
-            '/v2/delay_tolerant_workload/delay_tolerant_workload',
+            '/v2/delay_tolerant_workloads/dtw_test',
             expect_errors=True
         )
 
         self.assertEqual(404, resp.status_int)
 
-    @mock.patch.object(db_api, "get_delay_tolerant_workload", MOCK_DTWs)
+    @mock.patch.object(db_api, "get_delay_tolerant_workloads", MOCK_DTWs)
     def test_get_all(self):
-        resp = self.app.get('/v2/delay_tolerant_workload')
+        resp = self.app.get('/v2/delay_tolerant_workloads')
 
         self.assertEqual(200, resp.status_int)
 
-        self.assertEqual(1, len(resp.json['delay_tolerant_workload']))
-        self.assertDictEqual(DTW, resp.json['delay_tolerant_workload'][0])
+        self.assertEqual(1, len(resp.json['delay_tolerant_workloads']))
+        self.assertDictEqual(DTW, resp.json['delay_tolerant_workloads'][0])
 
-    @mock.patch.object(db_api, "get_delay_tolerant_workload", MOCK_EMPTY)
+    @mock.patch.object(db_api, "get_delay_tolerant_workloads", MOCK_EMPTY)
     def test_get_all_empty(self):
-        resp = self.app.get('/v2/delay_tolerant_workload')
+        resp = self.app.get('/v2/delay_tolerant_workloads')
 
         self.assertEqual(200, resp.status_int)
 

@@ -21,6 +21,7 @@ from mistral.api.controllers import resource
 from mistral.api.controllers.v2 import action
 from mistral.api.controllers.v2 import action_execution
 from mistral.api.controllers.v2 import cron_trigger
+from mistral.api.controllers.v2 import delay_tolerant_workload
 from mistral.api.controllers.v2 import environment
 from mistral.api.controllers.v2 import execution
 from mistral.api.controllers.v2 import service
@@ -54,6 +55,8 @@ class Controller(object):
     environments = environment.EnvironmentController()
     action_executions = action_execution.ActionExecutionsController()
     services = service.ServicesController()
+    delay_tolerant_workloads = \
+        delay_tolerant_workload.DelayTolerantWorkloadController()
 
     @wsme_pecan.wsexpose(RootResource)
     def index(self):

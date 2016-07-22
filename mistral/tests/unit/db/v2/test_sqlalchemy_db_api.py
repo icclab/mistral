@@ -1384,6 +1384,7 @@ DELAY_TOLERANT_WORKLOADS = [
         datetime.datetime.now() + datetime.timedelta(days=1),
         'job_duration': 3600,  # seconds
         'scope': 'private',
+        'executed': False,
         'project_id': '<default-project>'
     },
     {
@@ -1395,6 +1396,7 @@ DELAY_TOLERANT_WORKLOADS = [
         datetime.datetime.now() + datetime.timedelta(days=1),
         'job_duration': 3600,  # seconds
         'scope': 'private',
+        'executed': False,
         'project_id': '<default-project>'
     },
 ]

@@ -18,6 +18,11 @@
 from mistral.db.v2 import api as db_api
 
 
+def get_unscheduled_delay_tolerant_workload():
+    """Return all workload that has not been initiated"""
+    return db_api.get_delay_tolerant_workloads(executed=False)
+
+
 def create_delay_tolerant_workload(name, workflow_name, workflow_input,
                                    workflow_params=None, deadline=None,
                                    job_duration=None, workflow_id=None):
@@ -35,7 +40,8 @@ def create_delay_tolerant_workload(name, workflow_name, workflow_input,
             'workflow_id': wf_def.id,
             'workflow_input': workflow_input or {},
             'workflow_params': workflow_params or {},
-            'scope': 'private'
+            'scope': 'private',
+            'executed': False
         }
 
         dtw = db_api.create_delay_tolerant_workload(values)

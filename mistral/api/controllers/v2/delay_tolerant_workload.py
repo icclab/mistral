@@ -95,9 +95,9 @@ class DelayTolerantWorkloadController(rest.RestController):
 
     @rest_utils.wrap_wsme_controller_exception
     @wsme_pecan.wsexpose(
-            DelayTolerantWorkload,
-            body=DelayTolerantWorkload,
-            status_code=201
+        DelayTolerantWorkload,
+        body=DelayTolerantWorkload,
+        status_code=201
     )
     def post(self, delay_tolerant_workload):
         """Creates a new delay tolerant workload."""
@@ -108,7 +108,6 @@ class DelayTolerantWorkloadController(rest.RestController):
 
         values = delay_tolerant_workload.to_dict()
 
-        # TODO(brunograz) - Change trigger model
         db_model = dtw.create_delay_tolerant_workload(
             values['name'],
             values.get('workflow_name'),

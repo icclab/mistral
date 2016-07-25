@@ -40,7 +40,7 @@ WF.update({'id': '123e4567-e89b-12d3-a456-426655440000', 'name': 'my_wf'})
 DTW = {
     'id': '123',
     'name': 'dtw_test',
-    'deadline': '2016-07-22T00:00:00',
+    'deadline': '2999-07-22T00:00:00',
     'workflow_name': WF.name,
     'job_duration': 4,
     'workflow_id': '123e4567-e89b-12d3-a456-426655440000',
@@ -72,7 +72,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "get_delay_tolerant_workload", MOCK_DTW)
     def test_get(self):
         resp = self.app.get(
-                '/v2/delay_tolerant_workloads/dtw_test'
+            '/v2/delay_tolerant_workloads/dtw_test'
         )
 
         self.assertEqual(200, resp.status_int)
@@ -100,14 +100,15 @@ class TestDelayTolerantWorkloadController(base.APITest):
 
         values = mock_mtd.call_args[0][0]
 
-        self.assertEqual('2016-07-22T00:00:00', values['deadline'])
+        self.assertEqual('2999-07-22T00:00:00', values['deadline'].strftime(
+            '%Y-%m-%dT%H:%M:%S'))
         self.assertEqual(4, values['job_duration'])
 
     @mock.patch.object(db_api, "get_workflow_definition", MOCK_WF)
     @mock.patch.object(
-            db_api,
-            "create_delay_tolerant_workload",
-            MOCK_DUPLICATE
+        db_api,
+        "create_delay_tolerant_workload",
+        MOCK_DUPLICATE
     )
     def test_post_dup(self):
         resp = self.app.post_json(
@@ -118,9 +119,9 @@ class TestDelayTolerantWorkloadController(base.APITest):
 
     @mock.patch.object(db_api, "get_workflow_definition", MOCK_WF)
     @mock.patch.object(
-            db_api,
-            "create_delay_tolerant_workload",
-            MOCK_DUPLICATE
+        db_api,
+        "create_delay_tolerant_workload",
+        MOCK_DUPLICATE
     )
     def test_post_same_wf_and_input(self):
         dtw = DTW.copy()
@@ -136,15 +137,15 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "delete_delay_tolerant_workload", MOCK_DELETE)
     def test_delete(self):
         resp = self.app.delete(
-                '/v2/delay_tolerant_workloads/dtw_test'
+            '/v2/delay_tolerant_workloads/dtw_test'
         )
 
         self.assertEqual(204, resp.status_int)
 
     @mock.patch.object(
-            db_api,
-            "delete_delay_tolerant_workload",
-            MOCK_NOT_FOUND
+        db_api,
+        "delete_delay_tolerant_workload",
+        MOCK_NOT_FOUND
     )
     def test_delete_not_found(self):
         resp = self.app.delete(

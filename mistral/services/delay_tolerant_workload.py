@@ -15,13 +15,25 @@
 # under the License.
 #
 
+from dateutil import parser as date_parser
+import datetime
+
 from mistral.db.v2 import api as db_api
+from mistral import exceptions as exc
 
 
 def create_delay_tolerant_workload(name, workflow_name, workflow_input,
                                    workflow_params=None, deadline=None,
                                    job_duration=None, workflow_id=None):
-    # TODO(brunograz) - add params verification
+    try:
+        deadline = date_parser.parse(deadline)
+    except ValueError as e:
+        raise exc.InvalidModelException(e.message)
+    if deadline < datetime.datetime.now() + datetime.timedelta(seconds=60):
+        raise exc.InvalidModelException(
+            'deadline must be at least 1 minute in the future.'
+        )
+
     with db_api.transaction():
         wf_def = db_api.get_workflow_definition(
             workflow_id if workflow_id else workflow_name

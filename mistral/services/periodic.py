@@ -95,6 +95,10 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             try:
                 # execute the workload
 
+                db_api_v2.update_delay_tolerant_workload(
+                    d.name,
+                    { 'executed': True } )
+
                 rpc.get_engine_client().start_workflow(
                     d.workflow.name,
                     d.workflow_input,

@@ -25,11 +25,7 @@ from mistral.engine.rpc_backend import rpc
 from mistral import exceptions as exc
 from mistral.services import security
 from mistral.services import triggers
-<<<<<<< HEAD
 from mistral.services import delay_tolerant_workload as dtw
-=======
-from mistral.services import dtw
->>>>>>> 520c27f7dfb835180b11bdd9bd399b1d16413e9f
 
 LOG = logging.getLogger(__name__)
 
@@ -86,11 +82,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         is new DTW and schedules it immediately.
         """
 
-<<<<<<< HEAD
         for d in dtw.get_unscheduled_delay_tolerant_workload():
-=======
-        for d in dtw.get_unscheduled_delay_tolerant_workload()
->>>>>>> 520c27f7dfb835180b11bdd9bd399b1d16413e9f
             LOG.debug("Processing delay tolerant workload: %s" % d)
 
             # Setup admin context before schedule triggers.
@@ -103,13 +95,10 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             try:
                 # execute the workload
 
-<<<<<<< HEAD
                 db_api_v2.update_delay_tolerant_workload(
                     d.name,
                     { 'executed': True } )
 
-=======
->>>>>>> 520c27f7dfb835180b11bdd9bd399b1d16413e9f
                 rpc.get_engine_client().start_workflow(
                     d.workflow.name,
                     d.workflow_input,

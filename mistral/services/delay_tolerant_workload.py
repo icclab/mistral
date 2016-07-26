@@ -16,6 +16,7 @@
 #
 
 from mistral.db.v2 import api as db_api
+from mistral.services import security
 
 
 def get_unscheduled_delay_tolerant_workload():
@@ -43,6 +44,8 @@ def create_delay_tolerant_workload(name, workflow_name, workflow_input,
             'scope': 'private',
             'executed': False
         }
+
+        security.add_trust_id(values)
 
         dtw = db_api.create_delay_tolerant_workload(values)
 

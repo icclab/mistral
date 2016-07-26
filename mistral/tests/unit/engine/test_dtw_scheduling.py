@@ -68,11 +68,11 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
         periodic.MistralPeriodicTasks(cfg.CONF).process_delay_tolerant_workload(None)
 
         unscheduled_workload_after = dtw.get_unscheduled_delay_tolerant_workload()
-        self.assertEqual(0, len(next_triggers))
+        self.assertEqual(0, len(unscheduled_workload_after))
 
         # Checking the workflow was executed, by
         # verifying that the status has changed to executed=True
-        executed_workload = dp_api.get_delay_tolerant_workload(d.name)
+        executed_workload = db_api.get_delay_tolerant_workload(d.name)
         self.assertEqual(executed_workload.executed, True)
 
 
@@ -99,7 +99,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
         unscheduled_workload = dtw.get_unscheduled_delay_tolerant_workload()
         self.assertEqual(0, len(unscheduled_workload))
 
-        executed_workload = dp_api.get_delay_tolerant_workload(d.name)
+        executed_workload = db_api.get_delay_tolerant_workload(d.name)
         self.assertEqual(executed_workload.executed, True)
 
 

@@ -12,6 +12,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+import datetime
 
 import mock
 from oslo_config import cfg
@@ -52,7 +53,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
             wf.name,
             {},
             {},
-            None,
+            (datetime.datetime.now()+datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S'),
             None,
             None
         )
@@ -64,6 +65,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
         unscheduled_workload = dtw.get_unscheduled_delay_tolerant_workload()
         self.assertEqual(1, len(unscheduled_workload))
         self.assertEqual(d.name, unscheduled_workload[0].name)
+        self.assertEqual(d.deadline, unscheduled_workload[0].deadline)
 
         periodic.MistralPeriodicTasks(
             cfg.CONF).process_delay_tolerant_workload(None)
@@ -87,13 +89,14 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
             wf.name,
             {},
             {},
-            None,
+            (datetime.datetime.now()+datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S'),
             None,
             None
         )
 
         unscheduled_workload = dtw.get_unscheduled_delay_tolerant_workload()
         self.assertEqual(1, len(unscheduled_workload))
+        self.assertEqual(d.deadline, unscheduled_workload[0].deadline)
 
         periodic.MistralPeriodicTasks(
             cfg.CONF).process_delay_tolerant_workload(None)

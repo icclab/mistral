@@ -64,6 +64,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
 
         unscheduled_workload = dtw.get_unscheduled_delay_tolerant_workload()
         self.assertEqual(1, len(unscheduled_workload))
+        self.assertEqual(d.name, unscheduled_workload[0].name)
 
         periodic.MistralPeriodicTasks(cfg.CONF).process_delay_tolerant_workload(None)
 

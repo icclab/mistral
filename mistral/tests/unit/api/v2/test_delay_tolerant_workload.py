@@ -16,6 +16,7 @@
 #
 
 import copy
+import datetime
 import json
 import mock
 
@@ -40,7 +41,8 @@ WF.update({'id': '123e4567-e89b-12d3-a456-426655440000', 'name': 'my_wf'})
 DTW = {
     'id': '123',
     'name': 'dtw_test',
-    'deadline': '2999-07-22T00:00:00',
+    'deadline': (datetime.datetime.now() + datetime.timedelta(
+            hours=2)).strftime("%Y-%m-%dT%H:%M:%S"),
     'workflow_name': WF.name,
     'job_duration': 4,
     'workflow_id': '123e4567-e89b-12d3-a456-426655440000',
@@ -100,7 +102,8 @@ class TestDelayTolerantWorkloadController(base.APITest):
 
         values = mock_mtd.call_args[0][0]
 
-        self.assertEqual('2999-07-22T00:00:00', values['deadline'].strftime(
+        date = resp.json['deadline']
+        self.assertEqual(date, values['deadline'].strftime(
             '%Y-%m-%dT%H:%M:%S'))
         self.assertEqual(4, values['job_duration'])
 

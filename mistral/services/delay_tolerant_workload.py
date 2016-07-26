@@ -19,8 +19,10 @@ import datetime
 from dateutil import parser as date_parser
 
 from mistral.db.v2 import api as db_api
+from mistral.engine import utils as eng_utils
 from mistral import exceptions as exc
 from mistral.services import security
+from mistral.workbook import parser
 
 
 def get_unscheduled_delay_tolerant_workload():
@@ -43,6 +45,12 @@ def create_delay_tolerant_workload(name, workflow_name, workflow_input,
     with db_api.transaction():
         wf_def = db_api.get_workflow_definition(
             workflow_id if workflow_id else workflow_name
+        )
+
+        eng_utils.validate_input(
+            wf_def,
+            workflow_input or {},
+            parser.get_workflow_spec(wf_def.spec)
         )
 
         values = {

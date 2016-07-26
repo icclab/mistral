@@ -1281,6 +1281,14 @@ def delete_delay_tolerant_workloads(**kwargs):
     return _delete_all(models.DTWorkload, **kwargs)
 
 
+@b.session_aware()
+def get_delay_tolerant_workloads_with_execution(executed, session=None):
+    query = b.model_query(models.DTWorkload)
+    query = query.filter(models.DTWorkload.executed = executed)
+
+    return query.all()
+
+
 def _get_delay_tolerant_workload(name):
     return _get_db_object_by_name(models.DTWorkload, name)
 

@@ -21,7 +21,7 @@ from mistral.services import security
 
 def get_unscheduled_delay_tolerant_workload():
     """Return all workload that has not been initiated"""
-    return db_api.get_delay_tolerant_workloads(**{'executed': False})
+    return db_api.get_delay_tolerant_workloads_with_execution(False)
 
 
 def create_delay_tolerant_workload(name, workflow_name, workflow_input,

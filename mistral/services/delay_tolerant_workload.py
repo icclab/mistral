@@ -15,8 +15,8 @@
 # under the License.
 #
 
-from dateutil import parser as date_parser
 import datetime
+from dateutil import parser as date_parser
 
 from mistral.db.v2 import api as db_api
 from mistral import exceptions as exc

@@ -53,7 +53,8 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
             wf.name,
             {},
             {},
-            (datetime.datetime.now()+datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S'),
+            (datetime.datetime.now() + datetime.timedelta(hours=2))
+            .strftime('%Y-%m-%dT%H:%M:%S'),
             None,
             None
         )
@@ -89,7 +90,8 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
             wf.name,
             {},
             {},
-            (datetime.datetime.now()+datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S'),
+            (datetime.datetime.now() + datetime.timedelta(hours=2))
+            .strftime('%Y-%m-%dT%H:%M:%S'),
             None,
             None
         )

@@ -186,7 +186,7 @@ class DelayTolerantWorkloadController(rest.RestController):
             scope=scope,
             job_duration=job_duration,
             deadline=deadline,
-            )
+        )
 
         LOG.info("Fetching Delay tolerant workload. "
                  "marker=%s, limit=%s, sort_keys=%s, "

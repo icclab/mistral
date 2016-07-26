@@ -23,8 +23,10 @@ from mistral import context as auth_ctx
 from mistral.db.v2 import api as db_api_v2
 from mistral.engine.rpc_backend import rpc
 from mistral import exceptions as exc
+from mistral.services import delay_tolerant_workload as dtw
 from mistral.services import security
 from mistral.services import triggers
+
 
 LOG = logging.getLogger(__name__)
 
@@ -69,6 +71,45 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             except Exception:
                 # Log and continue to next cron trigger.
                 LOG.exception("Failed to process cron trigger %s" % str(t))
+            finally:
+                auth_ctx.set_ctx(None)
+
+    @periodic_task.periodic_task(spacing=1, run_immediately=True)
+    def process_delay_tolerant_workload(self, ctx):
+        """This function schedules delay tolerant workload.
+
+        In this initial, basic version, the function just determines if there
+        is new DTW and schedules it immediately.
+        """
+
+        for d in dtw.get_unscheduled_delay_tolerant_workload():
+            LOG.debug("Processing delay tolerant workload: %s" % d)
+
+            # Setup admin context before schedule triggers.
+            ctx = security.create_context(d.trust_id, d.project_id)
+
+            auth_ctx.set_ctx(ctx)
+
+            LOG.debug("Delay tolerant workload security context: %s" % ctx)
+
+            try:
+                # execute the workload
+
+                db_api_v2.update_delay_tolerant_workload(
+                    d.name,
+                    {'executed': True}
+                )
+
+                rpc.get_engine_client().start_workflow(
+                    d.workflow.name,
+                    d.workflow_input,
+                    description="DTW Workflow execution created.",
+                    **d.workflow_params
+                )
+            except Exception:
+                # Log and continue to next cron trigger.
+                LOG.exception(
+                    "Failed to process delay tolerant workload %s" % str(d))
             finally:
                 auth_ctx.set_ctx(None)
 

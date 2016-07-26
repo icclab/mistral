@@ -1550,6 +1550,38 @@ class DTWorkloadTest(SQLAlchemyTest):
         self.assertIn("'job_duration': 3600", s)
         self.assertIn("'name': 'dtw1'", s)
 
+    def test_get_delay_tolerant_workload_with_execution(self):
+        created0 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
+        created1 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[1])
+
+        fetched = db_api.get_delay_tolerant_workloads_with_execution(False)
+
+        self.assertEqual(2, len(fetched))
+        self.assertEqual(created0, fetched[0])
+        self.assertEqual(created1, fetched[1])
+
+        fetched = db_api.get_delay_tolerant_workloads_with_execution(True)
+        self.assertEqual(0, len(fetched))
+
+    def test_get_delay_tolerant_workload_with_execution_without_auth(self):
+        """This works the same whether or not there is authentication."""
+        cfg.CONF.set_default('auth_enable', False, group='pecan')
+        created0 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
+        created1 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[1])
+
+        fetched = db_api.get_delay_tolerant_workloads_with_execution(False)
+
+        self.assertEqual(2, len(fetched))
+        self.assertEqual(created0, fetched[0])
+        self.assertEqual(created1, fetched[1])
+
+        fetched = db_api.get_delay_tolerant_workloads_with_execution(True)
+        self.assertEqual(0, len(fetched))
+
 
 ENVIRONMENTS = [
     {

@@ -20,6 +20,12 @@ import datetime
 
 from mistral.db.v2 import api as db_api
 from mistral import exceptions as exc
+from mistral.services import security
+
+
+def get_unscheduled_delay_tolerant_workload():
+    """Return all workload that has not been initiated"""
+    return db_api.get_delay_tolerant_workloads_with_execution(False)
 
 
 def create_delay_tolerant_workload(name, workflow_name, workflow_input,
@@ -47,8 +53,11 @@ def create_delay_tolerant_workload(name, workflow_name, workflow_input,
             'workflow_id': wf_def.id,
             'workflow_input': workflow_input or {},
             'workflow_params': workflow_params or {},
-            'scope': 'private'
+            'scope': 'private',
+            'executed': False
         }
+
+        security.add_trust_id(values)
 
         dtw = db_api.create_delay_tolerant_workload(values)
 

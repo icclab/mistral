@@ -1551,6 +1551,19 @@ class DTWorkloadTest(SQLAlchemyTest):
         self.assertIn("'name': 'dtw1'", s)
 
 
+    def test_get_delay_tolerant_workload_with_execution(self):
+        created0 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[0])
+        created1 = db_api.create_delay_tolerant_workload(
+            DELAY_TOLERANT_WORKLOADS[1])
+
+        fetched = db_api.get_delay_tolerant_workloads_with_execution(False)
+
+        self.assertEqual(2, len(fetched))
+        self.assertEqual(created0, fetched[0])
+        self.assertEqual(created1, fetched[1])
+
+
 ENVIRONMENTS = [
     {
         'name': 'env1',

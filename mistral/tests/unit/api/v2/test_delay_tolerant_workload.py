@@ -72,7 +72,7 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "get_delay_tolerant_workload", MOCK_DTW)
     def test_get(self):
         resp = self.app.get(
-                '/v2/delay_tolerant_workloads/dtw_test'
+            '/v2/delay_tolerant_workloads/dtw_test'
         )
 
         self.assertEqual(200, resp.status_int)
@@ -105,9 +105,9 @@ class TestDelayTolerantWorkloadController(base.APITest):
 
     @mock.patch.object(db_api, "get_workflow_definition", MOCK_WF)
     @mock.patch.object(
-            db_api,
-            "create_delay_tolerant_workload",
-            MOCK_DUPLICATE
+        db_api,
+        "create_delay_tolerant_workload",
+        MOCK_DUPLICATE
     )
     def test_post_dup(self):
         resp = self.app.post_json(
@@ -118,9 +118,9 @@ class TestDelayTolerantWorkloadController(base.APITest):
 
     @mock.patch.object(db_api, "get_workflow_definition", MOCK_WF)
     @mock.patch.object(
-            db_api,
-            "create_delay_tolerant_workload",
-            MOCK_DUPLICATE
+        db_api,
+        "create_delay_tolerant_workload",
+        MOCK_DUPLICATE
     )
     def test_post_same_wf_and_input(self):
         dtw = DTW.copy()
@@ -136,15 +136,15 @@ class TestDelayTolerantWorkloadController(base.APITest):
     @mock.patch.object(db_api, "delete_delay_tolerant_workload", MOCK_DELETE)
     def test_delete(self):
         resp = self.app.delete(
-                '/v2/delay_tolerant_workloads/dtw_test'
+            '/v2/delay_tolerant_workloads/dtw_test'
         )
 
         self.assertEqual(204, resp.status_int)
 
     @mock.patch.object(
-            db_api,
-            "delete_delay_tolerant_workload",
-            MOCK_NOT_FOUND
+        db_api,
+        "delete_delay_tolerant_workload",
+        MOCK_NOT_FOUND
     )
     def test_delete_not_found(self):
         resp = self.app.delete(

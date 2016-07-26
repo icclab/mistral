@@ -95,9 +95,9 @@ class DelayTolerantWorkloadController(rest.RestController):
 
     @rest_utils.wrap_wsme_controller_exception
     @wsme_pecan.wsexpose(
-            DelayTolerantWorkload,
-            body=DelayTolerantWorkload,
-            status_code=201
+        DelayTolerantWorkload,
+        body=DelayTolerantWorkload,
+        status_code=201
     )
     def post(self, delay_tolerant_workload):
         """Creates a new delay tolerant workload."""
@@ -187,7 +187,7 @@ class DelayTolerantWorkloadController(rest.RestController):
             scope=scope,
             job_duration=job_duration,
             deadline=deadline,
-            )
+        )
 
         LOG.info("Fetching Delay tolerant workload. "
                  "marker=%s, limit=%s, sort_keys=%s, "

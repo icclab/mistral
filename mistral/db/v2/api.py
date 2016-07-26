@@ -470,7 +470,8 @@ def delete_delay_tolerant_workload(name):
 
 
 def get_delay_tolerant_workloads_with_execution(executed, session=None):
-    return IMPL.get_delay_tolerant_workloads_with_execution(executed, session=None)
+    return IMPL.get_delay_tolerant_workloads_with_execution(executed,
+                                                            session=None)
 
 
 def delete_delay_tolerant_workloads(**kwargs):

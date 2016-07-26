@@ -12,15 +12,14 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-import datetime
 
 import mock
 from oslo_config import cfg
 
 from mistral.db.v2 import api as db_api
+from mistral.services import delay_tolerant_workload as dtw
 from mistral.services import periodic
 from mistral.services import security
-from mistral.services import delay_tolerant_workload as dtw
 from mistral.services import workflows
 from mistral.tests.unit.engine import base
 from mistral import utils
@@ -66,16 +65,17 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
         self.assertEqual(1, len(unscheduled_workload))
         self.assertEqual(d.name, unscheduled_workload[0].name)
 
-        periodic.MistralPeriodicTasks(cfg.CONF).process_delay_tolerant_workload(None)
+        periodic.MistralPeriodicTasks(
+            cfg.CONF).process_delay_tolerant_workload(None)
 
-        unscheduled_workload_after = dtw.get_unscheduled_delay_tolerant_workload()
+        unscheduled_workload_after = dtw \
+            .get_unscheduled_delay_tolerant_workload()
         self.assertEqual(0, len(unscheduled_workload_after))
 
         # Checking the workflow was executed, by
         # verifying that the status has changed to executed=True
         executed_workload = db_api.get_delay_tolerant_workload(d.name)
         self.assertEqual(executed_workload.executed, True)
-
 
     def test_workflow_without_auth(self):
         cfg.CONF.set_default('auth_enable', False, group='pecan')
@@ -95,14 +95,14 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
         unscheduled_workload = dtw.get_unscheduled_delay_tolerant_workload()
         self.assertEqual(1, len(unscheduled_workload))
 
-        periodic.MistralPeriodicTasks(cfg.CONF).process_delay_tolerant_workload(None)
+        periodic.MistralPeriodicTasks(
+            cfg.CONF).process_delay_tolerant_workload(None)
 
         unscheduled_workload = dtw.get_unscheduled_delay_tolerant_workload()
         self.assertEqual(0, len(unscheduled_workload))
 
         executed_workload = db_api.get_delay_tolerant_workload(d.name)
         self.assertEqual(executed_workload.executed, True)
-
 
     # @mock.patch('mistral.services.triggers.validate_cron_trigger_input')
     # def test_create_cron_trigger_with_pattern_and_first_time(self,

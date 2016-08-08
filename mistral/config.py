@@ -129,7 +129,13 @@ engine_opts = [
         default=1024,
         help='The default maximum size in KB of large text fields '
              'of runtime execution objects. Use -1 for no limit.'
-    )
+    ),
+    # inserted by SM
+    cfg.BoolOpt(
+        'dtw_scheduler_last_minute',
+        default=True,
+        help='Boolean to determine whether we use last minute scheduler or schedule immediately.'
+    )    
 ]
 
 executor_opts = [

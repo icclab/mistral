@@ -14,6 +14,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import datetime
+
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import periodic_task
@@ -34,6 +36,9 @@ CONF = cfg.CONF
 
 # {periodic_task: thread_group}
 _periodic_tasks = {}
+
+# Make sure to import 'auth_enable' option before using it.
+CONF.import_opt('dtw_scheduler_last_minute', 'mistral.config', group='engine')
 
 
 class MistralPeriodicTasks(periodic_task.PeriodicTasks):
@@ -74,13 +79,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             finally:
                 auth_ctx.set_ctx(None)
 
-    @periodic_task.periodic_task(spacing=1, run_immediately=True)
-    def process_delay_tolerant_workload(self, ctx):
-        """This function schedules delay tolerant workload.
-
-        In this initial, basic version, the function just determines if there
-        is new DTW and schedules it immediately.
-        """
+    def _dtw_schedule_immediately(self, ctx):
 
         for d in dtw.get_unscheduled_delay_tolerant_workload():
             LOG.debug("Processing delay tolerant workload: %s" % d)
@@ -112,6 +111,77 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                     "Failed to process delay tolerant workload %s" % str(d))
             finally:
                 auth_ctx.set_ctx(None)
+
+    def _dtw_last_minute_scheduling(self, ctx):
+
+        for d in dtw.get_unscheduled_delay_tolerant_workload():
+            LOG.debug("Processing delay tolerant workload: %s" % d)
+
+            # Setup admin context before schedule triggers.
+            ctx = security.create_context(d.trust_id, d.project_id)
+
+            auth_ctx.set_ctx(ctx)
+
+            LOG.debug("Delay tolerant workload security context: %s" % ctx)
+
+            # calculate last time for running this - deadline less the
+            # duration of the work
+            # TODO(murp): check the status of the security context on this
+            # TODO(murp): convert job_duration to timedelta
+            start_time = d.deadline - datetime.timedelta(seconds=d.job_duration)
+            
+            triggers.create_cron_trigger(d.name, d.workflow_name, 
+                                         d.workflow_input,
+                                         workflow_params=d.workflow_params, 
+                                         count=1, 
+                                         first_time=start_time,
+                                         start_time=start_time, 
+                                         workflow_id=d.workflow_id)
+
+
+    @periodic_task.periodic_task(spacing=1, run_immediately=True)
+    def process_delay_tolerant_workload(self, ctx):
+        """This function schedules delay tolerant workload.
+
+        In this initial, basic version, the function just determines if there
+        is new DTW and schedules it immediately.
+        """
+
+        if CONF.engine.dtw_scheduler_last_minute:
+            self._dtw_last_minute_scheduling(ctx)
+        else:
+            self._dtw_schedule_immediately(ctx)
+
+        # for d in dtw.get_unscheduled_delay_tolerant_workload():
+        #     LOG.debug("Processing delay tolerant workload: %s" % d)
+
+        #     # Setup admin context before schedule triggers.
+        #     ctx = security.create_context(d.trust_id, d.project_id)
+
+        #     auth_ctx.set_ctx(ctx)
+
+        #     LOG.debug("Delay tolerant workload security context: %s" % ctx)
+
+        #     try:
+        #         # execute the workload
+
+        #         db_api_v2.update_delay_tolerant_workload(
+        #             d.name,
+        #             {'executed': True}
+        #         )
+
+        #         rpc.get_engine_client().start_workflow(
+        #             d.workflow.name,
+        #             d.workflow_input,
+        #             description="DTW Workflow execution created.",
+        #             **d.workflow_params
+        #         )
+        #     except Exception:
+        #         # Log and continue to next cron trigger.
+        #         LOG.exception(
+        #             "Failed to process delay tolerant workload %s" % str(d))
+        #     finally:
+        #         auth_ctx.set_ctx(None)
 
 
 def advance_cron_trigger(t):

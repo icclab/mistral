@@ -45,6 +45,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
                        type('trust', (object,), {'id': 'my_trust_id'}))
     def test_start_workflow(self):
         cfg.CONF.set_default('auth_enable', True, group='pecan')
+        cfg.CONF.set_default('dtw_scheduler_last_minute', False, group='engine')
 
         wf = workflows.create_workflows(WORKFLOW_LIST)[0]
 
@@ -82,6 +83,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
 
     def test_workflow_without_auth(self):
         cfg.CONF.set_default('auth_enable', False, group='pecan')
+        cfg.CONF.set_default('dtw_scheduler_last_minute', False, group='engine')
 
         wf = workflows.create_workflows(WORKFLOW_LIST)[0]
 
@@ -108,6 +110,54 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
 
         executed_workload = db_api.get_delay_tolerant_workload(d.name)
         self.assertEqual(executed_workload.executed, True)
+
+    @mock.patch.object(security,
+                       'create_trust',
+                       type('trust', (object,), {'id': 'my_trust_id'}))
+    def test_last_minute_scheduled_workload(self):
+        cfg.CONF.set_default('auth_enable', True, group='pecan')
+        cfg.CONF.set_default('dtw_scheduler_last_minute', True, group='engine')
+
+        wf = workflows.create_workflows(WORKFLOW_LIST)[0]
+
+        name = 'dtw-%s' % utils.generate_unicode_uuid()
+
+        d = dtw.create_delay_tolerant_workload(
+            name,
+            wf.name,
+            {},
+            {},
+            (datetime.datetime.now() + datetime.timedelta(hours=2))
+            .strftime('%Y-%m-%dT%H:%M:%S'),
+            3600,
+            None
+        )
+
+        self.assertEqual('my_trust_id', d.trust_id)
+
+        cfg.CONF.set_default('auth_enable', False, group='pecan')
+
+        unscheduled_workload = dtw.get_unscheduled_delay_tolerant_workload()
+        self.assertEqual(1, len(unscheduled_workload))
+        self.assertEqual(d.name, unscheduled_workload[0].name)
+        self.assertEqual(d.deadline, unscheduled_workload[0].deadline)
+
+        periodic.MistralPeriodicTasks(
+            cfg.CONF).process_delay_tolerant_workload(None)
+
+        unscheduled_workload_after = dtw \
+            .get_unscheduled_delay_tolerant_workload()
+        self.assertEqual(1, len(unscheduled_workload_after))
+
+        # so we should check if we have a cron trigger associated with this
+        # workload now
+        cron_trigger_db = db_api.get_cron_trigger(d.name)
+
+        self.assertIsNotNone(cron_trigger_db)
+        self.assertEqual(
+            name ,
+            cron_trigger_db.name
+        )
 
     # @mock.patch('mistral.services.triggers.validate_cron_trigger_input')
     # def test_create_cron_trigger_with_pattern_and_first_time(self,
@@ -155,3 +205,4 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
     #         next_time,
     #         cron_trigger_db.next_execution_time
     #     )
+

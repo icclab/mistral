@@ -45,7 +45,8 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
                        type('trust', (object,), {'id': 'my_trust_id'}))
     def test_start_workflow(self):
         cfg.CONF.set_default('auth_enable', True, group='pecan')
-        cfg.CONF.set_default('dtw_scheduler_last_minute', False, group='engine')
+        cfg.CONF.set_default('dtw_scheduler_last_minute', False,
+                             group='engine')
 
         wf = workflows.create_workflows(WORKFLOW_LIST)[0]
 
@@ -83,7 +84,8 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
 
     def test_workflow_without_auth(self):
         cfg.CONF.set_default('auth_enable', False, group='pecan')
-        cfg.CONF.set_default('dtw_scheduler_last_minute', False, group='engine')
+        cfg.CONF.set_default('dtw_scheduler_last_minute', False,
+                             group='engine')
 
         wf = workflows.create_workflows(WORKFLOW_LIST)[0]
 
@@ -154,10 +156,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
         cron_trigger_db = db_api.get_cron_trigger(d.name)
 
         self.assertIsNotNone(cron_trigger_db)
-        self.assertEqual(
-            name ,
-            cron_trigger_db.name
-        )
+        self.assertEqual(name, cron_trigger_db.name)
 
     # @mock.patch('mistral.services.triggers.validate_cron_trigger_input')
     # def test_create_cron_trigger_with_pattern_and_first_time(self,
@@ -205,4 +204,3 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
     #         next_time,
     #         cron_trigger_db.next_execution_time
     #     )
-

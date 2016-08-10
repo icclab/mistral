@@ -29,6 +29,8 @@ from mistral.services import delay_tolerant_workload as dtw
 from mistral.services import security
 from mistral.services import triggers
 
+# threshold for work to be considered long term (in minutes)
+MINIMUM_LONG_TERM_WORKLOAD = 360
 
 LOG = logging.getLogger(__name__)
 
@@ -128,16 +130,79 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             # duration of the work
             # TODO(murp): check the status of the security context on this
             # TODO(murp): convert job_duration to timedelta
-            start_time = d.deadline - datetime.timedelta(seconds=d.job_duration)
-            
-            triggers.create_cron_trigger(d.name, d.workflow_name, 
+            start_time = d.deadline \
+                - datetime.timedelta(seconds=d.job_duration)
+
+            triggers.create_cron_trigger(d.name, d.workflow_name,
                                          d.workflow_input,
-                                         workflow_params=d.workflow_params, 
-                                         count=1, 
+                                         workflow_params=d.workflow_params,
+                                         count=1,
                                          first_time=start_time,
-                                         start_time=start_time, 
+                                         start_time=start_time,
                                          workflow_id=d.workflow_id)
 
+    def _dtw_energy_aware_scheduling(self, ctx):
+        '''This function schedules the workload in an energy efficient way.
+
+        This function considers two types of workloads:
+        - short term workloads (duration < 6 hrs)
+        - long term workloads (duration > 6 hrs)
+
+        For the short term workload, we determine the most suitable time to
+        run it given the deadline and the variation in energy price. For the
+        long term workload, we consider it too long term to be able to gain
+        from energy aware scheduling.
+
+        Note that the differentiation between short term and long term
+        workloads is somewhat arbitrary right now and needs further
+        consideration.
+        '''
+
+        for d in dtw.get_unscheduled_delay_tolerant_workload():
+            LOG.debug("Processing delay tolerant workload: %s" % d)
+
+            # Setup admin context before schedule triggers.
+            ctx = security.create_context(d.trust_id, d.project_id)
+
+            auth_ctx.set_ctx(ctx)
+
+            LOG.debug("Delay tolerant workload security context: %s" % ctx)
+
+            if d.job_duration > MINIMUM_LONG_TERM_WORKLOAD:
+                # it is a long term workload - schedule immediately
+                try:
+                    # execute the workload
+
+                    db_api_v2.update_delay_tolerant_workload(
+                        d.name,
+                        {'executed': True}
+                    )
+
+                    rpc.get_engine_client().start_workflow(
+                        d.workflow.name,
+                        d.workflow_input,
+                        description="DTW Workflow execution created.",
+                        **d.workflow_params
+                    )
+                except Exception:
+                    # Log and continue to next cron trigger.
+                    LOG.exception(
+                        "Failed to process delay tolerant workload %s" %
+                        str(d))
+                finally:
+                    auth_ctx.set_ctx(None)
+            else:
+                # it is a short term workload
+                scheduling_time = \
+                    self._determine_optimal_scheduling(d.job_duration)
+
+                triggers.create_cron_trigger(d.name, d.workflow_name,
+                                             d.workflow_input,
+                                             workflow_params=d.workflow_params,
+                                             count=1,
+                                             first_time=scheduling_time,
+                                             start_time=scheduling_time,
+                                             workflow_id=d.workflow_id)
 
     @periodic_task.periodic_task(spacing=1, run_immediately=True)
     def process_delay_tolerant_workload(self, ctx):

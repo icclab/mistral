@@ -134,8 +134,9 @@ engine_opts = [
     cfg.BoolOpt(
         'dtw_scheduler_last_minute',
         default=True,
-        help='Boolean to determine whether we use last minute scheduler or schedule immediately.'
-    )    
+        help='Boolean to determine whether we use last minute \
+        scheduler or schedule immediately.'
+    )
 ]
 
 executor_opts = [

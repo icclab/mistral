@@ -14,6 +14,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import copy
+
 import datetime
 
 from oslo_config import cfg
@@ -156,6 +158,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         # merge energy prices
         ep = dict()
         ep.update(energy_prices['intra-day'])
+        ep.update(energy_prices['day-ahead'])
+        ref_ep = copy.copy(ep)
 
         today = current_time.date()
 
@@ -164,7 +168,6 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         for i in range(0, current_time.hour + 1):
             k = datetime.datetime.combine(today, datetime.time(hour=i))
             del ep[k]
-        ep.update(energy_prices['day-ahead'])
 
         # this is the last time for which we have energy prices
         final_time = (datetime.datetime.combine(today, datetime.time(0))
@@ -177,7 +180,9 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                                 datetime.timedelta(minutes=job_duration))
             iter_time = iter_time_approx \
                 - datetime.timedelta(minutes=iter_time_approx.minute,
-                                     seconds=iter_time_approx.second)
+                                     seconds=iter_time_approx.second) \
+                + datetime.timedelta(hours=1)
+
             while iter_time < final_time:
                 del ep[iter_time]
                 iter_time += datetime.timedelta(hours=1)
@@ -187,10 +192,11 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         job_duration_hours = (job_duration * 1.0) / 60
         minimum_price = -1
         minimum_time = None
+
         for t in ep:
             job_cost = 0
             for i in range(0, int(job_duration_hours)):
-                job_cost += ep[t + datetime.timedelta(hours=i)]
+                job_cost += ref_ep[t + datetime.timedelta(hours=i)]
             if minimum_price == -1 or job_cost < minimum_price:
                 minimum_price = job_cost
                 minimum_time = t

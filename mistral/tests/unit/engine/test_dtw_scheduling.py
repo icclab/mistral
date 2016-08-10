@@ -168,7 +168,7 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
 
         # job duration in minutes
         job_duration = 75
-        deadline = datetime.datetime.strptime("2016-07-06T22:00:00",
+        deadline = datetime.datetime.strptime("2016-07-06T23:00:00",
                                               "%Y-%m-%dT%H:%M:%S")
 
         scheduling_time = \
@@ -176,7 +176,23 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
             ._find_optimal_start_time_with_data(current_time,
                                                 test_data.ENERGY_PRICES,
                                                 job_duration, deadline)
-        expected_time = datetime.datetime.strptime("2016-07-06T16:00:00",
+        expected_time = datetime.datetime.strptime("2016-07-06T21:00:00",
+                                                   "%Y-%m-%dT%H:%M:%S")
+        self.assertEqual(scheduling_time, expected_time)
+
+        current_time = datetime.datetime.strptime("2016-07-06T07:43:00",
+                                                  "%Y-%m-%dT%H:%M:%S")
+
+        # job duration in minutes
+        job_duration = 150
+        deadline = datetime.datetime.strptime("2016-07-06T23:00:00",
+                                              "%Y-%m-%dT%H:%M:%S")
+        scheduling_time = \
+            periodic.MistralPeriodicTasks(cfg.CONF)\
+            ._find_optimal_start_time_with_data(current_time,
+                                                test_data.ENERGY_PRICES,
+                                                job_duration, deadline)
+        expected_time = datetime.datetime.strptime("2016-07-06T15:00:00",
                                                    "%Y-%m-%dT%H:%M:%S")
         self.assertEqual(scheduling_time, expected_time)
 

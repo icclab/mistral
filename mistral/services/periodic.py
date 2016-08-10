@@ -141,6 +141,96 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                                          start_time=start_time,
                                          workflow_id=d.workflow_id)
 
+    def _find_optimal_start_time_with_data(self,
+                                           current_time,
+                                           energy_prices,
+                                           job_duration,
+                                           deadline):
+        '''This function determines optimal start time for job with given data.
+
+        This function iterates over all the scheduling times before the
+        deadline and determines the best time to schedule the job in terms of
+        lowest mean energy price.
+        '''
+
+        # merge energy prices
+        ep = dict()
+        ep.update(energy_prices['intra-day'])
+
+        today = current_time.date()
+
+        # prices in the past are not valid - remove from dict
+        # we also remove the current time window - this should be reviewed
+        for i in range(0, current_time.hour + 1):
+            k = datetime.datetime.combine(today, datetime.time(hour=i))
+            del ep[k]
+        ep.update(energy_prices['day-ahead'])
+
+        # this is the last time for which we have energy prices
+        final_time = (datetime.datetime.combine(today, datetime.time(0))
+                      + datetime.timedelta(days=2))
+        if (deadline - datetime.timedelta(minutes=job_duration)) < final_time:
+            # remove the future times which are not valid - those past
+            # deadline-job_duration are out
+            # TODO(murp): check if rounding on job_duration is an issue
+            iter_time_approx = (deadline -
+                                datetime.timedelta(minutes=job_duration))
+            iter_time = iter_time_approx \
+                - datetime.timedelta(minutes=iter_time_approx.minute,
+                                     seconds=iter_time_approx.second)
+            while iter_time < final_time:
+                del ep[iter_time]
+                iter_time += datetime.timedelta(hours=1)
+        # next remove times which are too late to start because they
+        # will result in job finishing after deadline...
+
+        job_duration_hours = (job_duration * 1.0) / 60
+        minimum_price = -1
+        minimum_time = None
+        for t in ep:
+            job_cost = 0
+            for i in range(0, int(job_duration_hours)):
+                job_cost += ep[t + datetime.timedelta(hours=i)]
+            if minimum_price == -1 or job_cost < minimum_price:
+                minimum_price = job_cost
+                minimum_time = t
+
+        return minimum_time
+
+    def _get_energy_prices(self):
+        '''This function queries the configured API for energy prices.
+
+        Currently, the API is configured locally, but this should
+        be a configuration option.
+        '''
+
+        # this needs to be written...
+
+        return
+
+    def _determine_optimal_scheduling(self, job_duration, deadline):
+        '''This function determines the when to schedule job.
+
+        It is based on the current information relating to energy
+        consumption. Currently, it does not take into account the
+        rest of the DTW, meaning that it is entirely possible it
+        may be distributed in a very bursty manner.
+        '''
+
+        # get the energy prices
+        energy_prices = self._get_energy_prices()
+
+        # get the current time
+        current_time = datetime.datetime.now()
+
+        optimal_start_time = \
+            self._find_optimal_start_time_with_data(current_time,
+                                                    energy_prices,
+                                                    job_duration,
+                                                    deadline)
+
+        return optimal_start_time
+
     def _dtw_energy_aware_scheduling(self, ctx):
         '''This function schedules the workload in an energy efficient way.
 

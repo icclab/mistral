@@ -25,6 +25,7 @@ from mistral.services import workflows
 from mistral.tests.unit.engine import base
 from mistral import utils
 
+import test_data
 
 WORKFLOW_LIST = """
 ---
@@ -157,6 +158,27 @@ class ProcessDelayTolerantWorkload(base.EngineTestCase):
 
         self.assertIsNotNone(cron_trigger_db)
         self.assertEqual(name, cron_trigger_db.name)
+
+    def test_find_optimal_start_time_with_data(self):
+        cfg.CONF.set_default('auth_enable', True, group='pecan')
+        cfg.CONF.set_default('dtw_scheduler_last_minute', True, group='engine')
+
+        current_time = datetime.datetime.strptime("2016-07-06T15:43:00",
+                                                  "%Y-%m-%dT%H:%M:%S")
+
+        # job duration in minutes
+        job_duration = 75
+        deadline = datetime.datetime.strptime("2016-07-06T22:00:00",
+                                              "%Y-%m-%dT%H:%M:%S")
+
+        scheduling_time = \
+            periodic.MistralPeriodicTasks(cfg.CONF)\
+            ._find_optimal_start_time_with_data(current_time,
+                                                test_data.ENERGY_PRICES,
+                                                job_duration, deadline)
+        expected_time = datetime.datetime.strptime("2016-07-06T16:00:00",
+                                                   "%Y-%m-%dT%H:%M:%S")
+        self.assertEqual(scheduling_time, expected_time)
 
     # @mock.patch('mistral.services.triggers.validate_cron_trigger_input')
     # def test_create_cron_trigger_with_pattern_and_first_time(self,

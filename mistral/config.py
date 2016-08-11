@@ -136,6 +136,12 @@ engine_opts = [
         default=True,
         help='Boolean to determine whether we use last minute \
         scheduler or schedule immediately.'
+    ),
+    cfg.StrOpt(
+        'dtw_scheduler_mode',
+        default='immediately',
+        choices=['immediately', 'last-minute', 'energy-aware'],
+        help='Type of delay tolerant workload scheduler to use.'
     )
 ]
 

@@ -15,7 +15,7 @@
 #    limitations under the License.
 
 import copy
-
+import requests
 import datetime
 
 from oslo_config import cfg
@@ -133,7 +133,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             # TODO(murp): check the status of the security context on this
             # TODO(murp): convert job_duration to timedelta
             start_time = d.deadline \
-                - datetime.timedelta(seconds=d.job_duration)
+                - datetime.timedelta(minutes=d.job_duration)
 
             triggers.create_cron_trigger(d.name, d.workflow_name,
                                          d.workflow_input,
@@ -148,12 +148,12 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                                            energy_prices,
                                            job_duration,
                                            deadline):
-        '''This function determines optimal start time for job with given data.
+        """This function determines optimal start time for job with given data.
 
         This function iterates over all the scheduling times before the
         deadline and determines the best time to schedule the job in terms of
         lowest mean energy price.
-        '''
+        """
 
         # merge energy prices
         ep = dict()
@@ -170,8 +170,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             del ep[k]
 
         # this is the last time for which we have energy prices
-        final_time = (datetime.datetime.combine(today, datetime.time(0))
-                      + datetime.timedelta(days=2))
+        final_time = (datetime.datetime.combine(today, datetime.time(0)) +
+                      datetime.timedelta(days=2))
         if (deadline - datetime.timedelta(minutes=job_duration)) < final_time:
             # remove the future times which are not valid - those past
             # deadline-job_duration are out
@@ -204,27 +204,31 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         return minimum_time
 
     def _get_energy_prices(self):
-        '''This function queries the configured API for energy prices.
+        """This function queries the configured API for energy prices.
 
         Currently, the API is configured locally, but this should
         be a configuration option.
-        '''
-
+        """
         # this needs to be written...
-
-        return
+        try:
+            return requests.get('http://localhost:9500/energy-price').json()
+        except requests.ConnectionError:
+            return None
 
     def _determine_optimal_scheduling(self, job_duration, deadline):
-        '''This function determines the when to schedule job.
+        """This function determines the when to schedule job.
 
         It is based on the current information relating to energy
         consumption. Currently, it does not take into account the
         rest of the DTW, meaning that it is entirely possible it
         may be distributed in a very bursty manner.
-        '''
+        """
 
         # get the energy prices
         energy_prices = self._get_energy_prices()
+
+        if not energy_prices:
+            return datetime.datetime.now() + datetime.timedelta(minutes=2)
 
         # get the current time
         current_time = datetime.datetime.now()
@@ -238,7 +242,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         return optimal_start_time
 
     def _dtw_energy_aware_scheduling(self, ctx):
-        '''This function schedules the workload in an energy efficient way.
+        """This function schedules the workload in an energy efficient way.
 
         This function considers two types of workloads:
         - short term workloads (duration < 6 hrs)
@@ -252,7 +256,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         Note that the differentiation between short term and long term
         workloads is somewhat arbitrary right now and needs further
         consideration.
-        '''
+        """
 
         for d in dtw.get_unscheduled_delay_tolerant_workload():
             LOG.debug("Processing delay tolerant workload: %s" % d)
@@ -290,7 +294,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             else:
                 # it is a short term workload
                 scheduling_time = \
-                    self._determine_optimal_scheduling(d.job_duration)
+                    self._determine_optimal_scheduling(d.job_duration,
+                                                       d.deadline)
 
                 triggers.create_cron_trigger(d.name, d.workflow_name,
                                              d.workflow_input,
@@ -308,41 +313,14 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         is new DTW and schedules it immediately.
         """
 
-        if CONF.engine.dtw_scheduler_last_minute:
-            self._dtw_last_minute_scheduling(ctx)
-        else:
+        if CONF.engine.dtw_scheduler_mode == 'immediately':
             self._dtw_schedule_immediately(ctx)
-
-        # for d in dtw.get_unscheduled_delay_tolerant_workload():
-        #     LOG.debug("Processing delay tolerant workload: %s" % d)
-
-        #     # Setup admin context before schedule triggers.
-        #     ctx = security.create_context(d.trust_id, d.project_id)
-
-        #     auth_ctx.set_ctx(ctx)
-
-        #     LOG.debug("Delay tolerant workload security context: %s" % ctx)
-
-        #     try:
-        #         # execute the workload
-
-        #         db_api_v2.update_delay_tolerant_workload(
-        #             d.name,
-        #             {'executed': True}
-        #         )
-
-        #         rpc.get_engine_client().start_workflow(
-        #             d.workflow.name,
-        #             d.workflow_input,
-        #             description="DTW Workflow execution created.",
-        #             **d.workflow_params
-        #         )
-        #     except Exception:
-        #         # Log and continue to next cron trigger.
-        #         LOG.exception(
-        #             "Failed to process delay tolerant workload %s" % str(d))
-        #     finally:
-        #         auth_ctx.set_ctx(None)
+        elif CONF.engine.dtw_scheduler_mode == 'last-minute':
+            self._dtw_last_minute_scheduling(ctx)
+        elif CONF.engine.dtw_scheduler_mode == 'energy-aware':
+            self._dtw_energy_aware_scheduling(ctx)
+        else:
+            raise AttributeError
 
 
 def advance_cron_trigger(t):

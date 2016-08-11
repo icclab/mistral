@@ -15,8 +15,8 @@
 #    limitations under the License.
 
 import copy
-import requests
 import datetime
+import requests
 
 from oslo_config import cfg
 from oslo_log import log as logging

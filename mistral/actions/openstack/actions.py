@@ -56,7 +56,6 @@ class NovaAction(base.OpenStackAction):
         ctx = context.ctx()
 
         LOG.debug("Nova action security context: %s" % ctx)
-
         keystone_endpoint = keystone_utils.get_keystone_endpoint_v2()
         nova_endpoint = keystone_utils.get_endpoint_for_project('nova')
 

@@ -71,7 +71,11 @@ def get_endpoint_for_project(service_name=None, service_type=None):
     ctx = context.ctx()
 
     token = ctx.auth_token
-    response = client().tokens.get_token_data(token, include_catalog=True)
+    if ctx.is_trust_scoped:
+        cli = client_for_admin(CONF.keystone_authtoken.admin_tenant_name)
+        response = cli.tokens.get_token_data(token, include_catalog=True)
+    else:
+        response = client().tokens.get_token_data(token, include_catalog=True)
 
     endpoints = select_service_endpoints(
         service_name,

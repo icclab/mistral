@@ -86,8 +86,6 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
     def _dtw_schedule_immediately(self, ctx):
 
         for d in dtw.get_unscheduled_delay_tolerant_workload():
-            LOG.debug("Processing delay tolerant workload: %s" % d)
-
             # Setup admin context before schedule triggers.
             ctx = security.create_context(d.trust_id, d.project_id)
 

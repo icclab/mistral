@@ -474,6 +474,11 @@ def get_delay_tolerant_workloads_with_execution(executed, session=None):
                                                             session=None)
 
 
+def get_unscheduled_delay_tolerant_workloads(scheduled, session=None):
+    return IMPL.get_unscheduled_delay_tolerant_workloads(scheduled,
+                                                         session=None)
+
+
 def delete_delay_tolerant_workloads(**kwargs):
     return IMPL.delete_delay_tolerant_workloads(**kwargs)
 

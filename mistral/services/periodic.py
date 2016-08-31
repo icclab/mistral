@@ -85,7 +85,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
 
     def _dtw_schedule_immediately(self, ctx):
 
-        for d in dtw.get_unscheduled_delay_tolerant_workload():
+        for d in dtw.get_delay_tolerant_workload_with_execution():
             # Setup admin context before schedule triggers.
             ctx = security.create_context(d.trust_id, d.project_id)
 
@@ -126,6 +126,11 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
 
             LOG.debug("Delay tolerant workload security context: %s" % ctx)
 
+            db_api_v2.update_delay_tolerant_workload(
+                    d.name,
+                    {'scheduled': True}
+                )
+
             # calculate last time for running this - deadline less the
             # duration of the work
             # TODO(murp): check the status of the security context on this
@@ -139,7 +144,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                                          count=1,
                                          first_time=start_time,
                                          start_time=start_time,
-                                         workflow_id=d.workflow_id)
+                                         workflow_id=d.workflow_id,
+                                         trust_id=d.trust_id)
 
     def _find_optimal_start_time_with_data(self,
                                            current_time,

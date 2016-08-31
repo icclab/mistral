@@ -1289,6 +1289,14 @@ def get_delay_tolerant_workloads_with_execution(executed, session=None):
     return query.all()
 
 
+@b.session_aware()
+def get_unscheduled_delay_tolerant_workloads(scheduled, session=None):
+    query = b.model_query(models.DTWorkload)
+    query = query.filter(models.DTWorkload.scheduled == scheduled)
+
+    return query.all()
+
+
 def _get_delay_tolerant_workload(name):
     return _get_db_object_by_name(models.DTWorkload, name)
 

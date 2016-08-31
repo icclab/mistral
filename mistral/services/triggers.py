@@ -60,7 +60,7 @@ def validate_cron_trigger_input(pattern, first_time, count):
 
 def create_cron_trigger(name, workflow_name, workflow_input,
                         workflow_params=None, pattern=None, first_time=None,
-                        count=None, start_time=None, workflow_id=None):
+                        count=None, start_time=None, workflow_id=None, trust_id=None):
     if not start_time:
         start_time = datetime.datetime.now()
 
@@ -107,7 +107,10 @@ def create_cron_trigger(name, workflow_name, workflow_input,
             'scope': 'private'
         }
 
-        security.add_trust_id(values)
+        if not trust_id:
+            security.add_trust_id(values)
+        else:
+            values.update({"trust_id": trust_id})
 
         trig = db_api.create_cron_trigger(values)
 

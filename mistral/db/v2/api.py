@@ -469,14 +469,14 @@ def delete_delay_tolerant_workload(name):
     return IMPL.delete_delay_tolerant_workload(name)
 
 
-def get_delay_tolerant_workloads_with_execution(executed, session=None):
-    return IMPL.get_delay_tolerant_workloads_with_execution(executed,
-                                                            session=None)
+def get_delay_tolerant_workloads_by_status(status, session=None):
+    return IMPL.get_delay_tolerant_workloads_by_status(status,
+                                                         session)
 
 
-def get_unscheduled_delay_tolerant_workloads(scheduled, session=None):
-    return IMPL.get_unscheduled_delay_tolerant_workloads(scheduled,
-                                                         session=None)
+def get_delay_tolerant_workloads_by_exec_time(exec_time, session=None):
+    return IMPL.get_delay_tolerant_workloads_by_execution_time(exec_time,
+                                                               session)
 
 
 def delete_delay_tolerant_workloads(**kwargs):

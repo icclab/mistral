@@ -41,7 +41,6 @@ class DelayTolerantWorkload(resource.Resource):
     workflow_id = wtypes.text
     workflow_input = types.jsontype
     workflow_params = types.jsontype
-    executed = wtypes.IntegerType()
 
     scope = SCOPE_TYPES
 

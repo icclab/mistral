@@ -43,6 +43,7 @@ _periodic_tasks = {}
 
 # Make sure to import 'auth_enable' option before using it.
 CONF.import_opt('dtw_scheduler_last_minute', 'mistral.config', group='engine')
+THRESHOLD = CONF.engine.load_threshold
 
 
 class MistralPeriodicTasks(periodic_task.PeriodicTasks):
@@ -85,7 +86,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
 
     def _dtw_schedule_immediately(self, ctx):
 
-        for d in dtw.get_delay_tolerant_workload_with_execution():
+        for d in dtw.get_unscheduled_delay_tolerant_workload():
             # Setup admin context before schedule triggers.
             ctx = security.create_context(d.trust_id, d.project_id)
 
@@ -98,7 +99,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
 
                 db_api_v2.update_delay_tolerant_workload(
                     d.name,
-                    {'executed': True}
+                    {'status': 'EXECUTED',
+                     'scheduled_execution_time': datetime.datetime.now()}
                 )
 
                 rpc.get_engine_client().start_workflow(
@@ -126,17 +128,18 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
 
             LOG.debug("Delay tolerant workload security context: %s" % ctx)
 
-            db_api_v2.update_delay_tolerant_workload(
-                    d.name,
-                    {'scheduled': True}
-                )
-
             # calculate last time for running this - deadline less the
             # duration of the work
             # TODO(murp): check the status of the security context on this
             # TODO(murp): convert job_duration to timedelta
             start_time = d.deadline \
                 - datetime.timedelta(minutes=d.job_duration)
+
+            db_api_v2.update_delay_tolerant_workload(
+                    d.name,
+                    {'status': 'SCHEDULED',
+                     'scheduled_execution_time': start_time}
+                )
 
             triggers.create_cron_trigger(d.name, d.workflow_name,
                                          d.workflow_input,
@@ -151,7 +154,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                                            current_time,
                                            energy_prices,
                                            job_duration,
-                                           deadline):
+                                           deadline,
+                                           scheduled_load):
         """This function determines optimal start time for job with given data.
 
         This function iterates over all the scheduling times before the
@@ -202,9 +206,12 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             for i in range(0, int(job_duration_hours)):
                 job_cost += ref_ep[t + datetime.timedelta(hours=i)]
             if minimum_price == -1 or job_cost < minimum_price:
-                minimum_price = job_cost
-                minimum_time = t
-
+                if t in scheduled_load.keys() and \
+                                scheduled_load[t] < THRESHOLD:
+                    minimum_price = job_cost
+                    minimum_time = t
+        if not minimum_time:
+            minimum_time = ep.keys()[-1]
         return minimum_time
 
     def _get_energy_prices(self):
@@ -219,7 +226,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         except requests.ConnectionError:
             return None
 
-    def _determine_optimal_scheduling(self, job_duration, deadline):
+    def _determine_optimal_scheduling(self, job_duration, deadline,
+                                      scheduled_load):
         """This function determines the when to schedule job.
 
         It is based on the current information relating to energy
@@ -241,7 +249,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             self._find_optimal_start_time_with_data(current_time,
                                                     energy_prices,
                                                     job_duration,
-                                                    deadline)
+                                                    deadline,
+                                                    scheduled_load)
 
         return optimal_start_time
 
@@ -279,7 +288,8 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
 
                     db_api_v2.update_delay_tolerant_workload(
                         d.name,
-                        {'executed': True}
+                        {'status': 'SCHEDULED',
+                         'scheduled_execution_time': datetime.datetime.now()}
                     )
 
                     rpc.get_engine_client().start_workflow(
@@ -297,9 +307,20 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                     auth_ctx.set_ctx(None)
             else:
                 # it is a short term workload
+
+                scheduled_load = self._map_map_scheduled_load_and_time(
+                    dtw.get_delay_tolerant_workload_by_exec_time(
+                        datetime.datetime.now()
+                    ))
                 scheduling_time = \
                     self._determine_optimal_scheduling(d.job_duration,
-                                                       d.deadline)
+                                                       d.deadline,
+                                                       scheduled_load)
+                db_api_v2.update_delay_tolerant_workload(
+                        d.name,
+                        {'status': 'SCHEDULED',
+                         'scheduled_execution_time': scheduling_time}
+                    )
 
                 triggers.create_cron_trigger(d.name, d.workflow_name,
                                              d.workflow_input,
@@ -308,6 +329,21 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                                              first_time=scheduling_time,
                                              start_time=scheduling_time,
                                              workflow_id=d.workflow_id)
+
+    def _map_scheduled_load_and_time(self, load):
+        dct = {}
+        for l in load:
+            wflow = db_api_v2.get_workflow_definition_by_id(load.workflow_id)
+            for actions in wflow['tasks']:
+                s_a = actions['tasks']['actions']
+                server_actions = len([ac for ac in s_a
+                                      if 'servers_create' in ac])
+
+                if l.scheduled_exection_time not in dct.keys():
+                    dct[l.scheduled_exection_time] = server_actions
+                else:
+                    dct[l.l.scheduled_exection_time] += server_actions
+        return dct
 
     @periodic_task.periodic_task(spacing=1, run_immediately=True)
     def process_delay_tolerant_workload(self, ctx):

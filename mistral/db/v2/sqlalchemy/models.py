@@ -417,8 +417,8 @@ class DTWorkload(mb.MistralSecureModelBase):
     # job duration specified in seconds
     job_duration = sa.Column(sa.Integer)
     workflow_name = sa.Column(sa.String(80))
-    executed = sa.Column(sa.Boolean())
-    scheduled = sa.Column(sa.Boolean())
+    status = sa.Column(sa.String(200))
+    scheduled_execution_time = sa.Column(sa.DateTime)
 
     workflow_id = sa.Column(
         sa.String(36),

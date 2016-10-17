@@ -42,7 +42,7 @@ class CronTrigger(resource.Resource):
     scope = SCOPE_TYPES
 
     pattern = wtypes.text
-    remaining_executions = wtypes.IntegerType(minimum=1)
+    remaining_executions = wtypes.IntegerType(minimum=0)
     first_execution_time = wtypes.text
     next_execution_time = wtypes.text
 

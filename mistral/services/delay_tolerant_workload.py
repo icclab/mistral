@@ -25,14 +25,13 @@ from mistral.services import security
 from mistral.workbook import parser
 
 
-def get_delay_tolerant_workload_with_execution():
-    """Return all workload that has not been initiated"""
-    return db_api.get_delay_tolerant_workloads_with_execution(False)
-
-
 def get_unscheduled_delay_tolerant_workload():
     """Return all workload that has not been initiated"""
-    return db_api.get_unscheduled_delay_tolerant_workloads(False)
+    return db_api.get_delay_tolerant_workloads_by_status("UNSCHEDULED")
+
+
+def get_delay_tolerant_workload_by_exec_time(exec_time):
+    return db_api.get_delay_tolerant_workloads_by_exec_time(exec_time)
 
 
 def create_delay_tolerant_workload(name, workflow_name, workflow_input,
@@ -67,8 +66,7 @@ def create_delay_tolerant_workload(name, workflow_name, workflow_input,
             'workflow_input': workflow_input or {},
             'workflow_params': workflow_params or {},
             'scope': 'private',
-            'executed': False,
-            'scheduled': False
+            'status': 'UNSCHEDULED'
         }
 
         security.add_trust_id(values)

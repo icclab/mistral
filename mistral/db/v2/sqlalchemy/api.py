@@ -1282,17 +1282,17 @@ def delete_delay_tolerant_workloads(**kwargs):
 
 
 @b.session_aware()
-def get_delay_tolerant_workloads_with_execution(executed, session=None):
+def get_delay_tolerant_workloads_by_status(status, session=None):
     query = b.model_query(models.DTWorkload)
-    query = query.filter(models.DTWorkload.executed == executed)
+    query = query.filter(models.DTWorkload.status == status)
 
     return query.all()
 
 
 @b.session_aware()
-def get_unscheduled_delay_tolerant_workloads(scheduled, session=None):
+def get_delay_tolerant_workloads_by_execution_time(exc_time, session=None):
     query = b.model_query(models.DTWorkload)
-    query = query.filter(models.DTWorkload.scheduled == scheduled)
+    query = query.filter(models.DTWorkload.scheduled_execution_time > exc_time)
 
     return query.all()
 

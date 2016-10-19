@@ -142,6 +142,11 @@ engine_opts = [
         default='immediately',
         choices=['immediately', 'last-minute', 'energy-aware'],
         help='Type of delay tolerant workload scheduler to use.'
+    ),
+    cfg.IntOpt(
+        'load_threshold',
+        default=20,
+        help='Type of delay tolerant workload scheduler to use.'
     )
 ]
 

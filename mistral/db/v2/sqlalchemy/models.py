@@ -338,7 +338,7 @@ class CronTrigger(mb.MistralSecureModelBase):
     __table_args__ = (
         sa.UniqueConstraint('name', 'project_id'),
         sa.UniqueConstraint(
-            'workflow_input_hash', 'workflow_name', 'pattern', 'project_id',
+            'workflow_name', 'pattern', 'project_id',
             'workflow_params_hash', 'remaining_executions',
             'first_execution_time'
         ),
@@ -443,6 +443,7 @@ class DTWorkload(mb.MistralSecureModelBase):
         d = super(DTWorkload, self).to_dict()
 
         mb.datetime_to_str(d, 'deadline')
+        mb.datetime_to_str(d, 'scheduled_execution_time')
 
         return d
 

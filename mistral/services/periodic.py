@@ -30,6 +30,7 @@ from mistral import exceptions as exc
 from mistral.services import delay_tolerant_workload as dtw
 from mistral.services import security
 from mistral.services import triggers
+from mistral.utils.openstack import nova
 
 # threshold for work to be considered long term (in minutes)
 MINIMUM_LONG_TERM_WORKLOAD = 360
@@ -42,7 +43,7 @@ CONF = cfg.CONF
 _periodic_tasks = {}
 
 # Make sure to import 'auth_enable' option before using it.
-CONF.import_opt('dtw_scheduler_last_minute', 'mistral.config', group='engine')
+CONF.import_opt('dtw_scheduler_mode', 'mistral.config', group='engine')
 THRESHOLD = CONF.engine.load_threshold
 
 
@@ -167,6 +168,9 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         ep = dict()
         ep.update(energy_prices['intra-day'])
         ep.update(energy_prices['day-ahead'])
+        for key in copy.copy(ep):
+            ep[datetime.datetime.strptime(key, '%Y-%m-%dT%H:%M:%S')] = \
+                ep.pop(key)
         ref_ep = copy.copy(ep)
 
         today = current_time.date()
@@ -200,16 +204,26 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
         job_duration_hours = (job_duration * 1.0) / 60
         minimum_price = -1
         minimum_time = None
+        minimum_price_holder = -1
+        minimum_time_holder = None
+
+        if int(job_duration_hours) == 0:
+            job_duration_hours = 1
 
         for t in ep:
             job_cost = 0
             for i in range(0, int(job_duration_hours)):
                 job_cost += ref_ep[t + datetime.timedelta(hours=i)]
             if minimum_price == -1 or job_cost < minimum_price:
+                minimum_price = job_cost
+                minimum_time = t
                 if t in scheduled_load.keys() and \
-                                scheduled_load[t] < THRESHOLD:
-                    minimum_price = job_cost
-                    minimum_time = t
+                        scheduled_load[t] > THRESHOLD:
+                    minimum_price = minimum_price_holder
+                    minimum_time = minimum_time_holder
+                minimum_price_holder = minimum_price
+                minimum_time_holder = minimum_time
+
         if not minimum_time:
             minimum_time = ep.keys()[-1]
         return minimum_time
@@ -308,7 +322,7 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
             else:
                 # it is a short term workload
 
-                scheduled_load = self._map_map_scheduled_load_and_time(
+                scheduled_load = self._map_scheduled_load_and_time(
                     dtw.get_delay_tolerant_workload_by_exec_time(
                         datetime.datetime.now()
                     ))
@@ -328,21 +342,25 @@ class MistralPeriodicTasks(periodic_task.PeriodicTasks):
                                              count=1,
                                              first_time=scheduling_time,
                                              start_time=scheduling_time,
-                                             workflow_id=d.workflow_id)
+                                             workflow_id=d.workflow_id,
+                                             trust_id=d.trust_id)
 
     def _map_scheduled_load_and_time(self, load):
         dct = {}
         for l in load:
-            wflow = db_api_v2.get_workflow_definition_by_id(load.workflow_id)
-            for actions in wflow['tasks']:
-                s_a = actions['tasks']['actions']
-                server_actions = len([ac for ac in s_a
-                                      if 'servers_create' in ac])
-
-                if l.scheduled_exection_time not in dct.keys():
-                    dct[l.scheduled_exection_time] = server_actions
-                else:
-                    dct[l.l.scheduled_exection_time] += server_actions
+            wflow = db_api_v2.get_workflow_definition_by_id(l.workflow_id)
+            server_actions = len([ac for ac in wflow['definitions'].split()
+                                  if 'servers_create' in ac])
+            try:
+                flavor_id = l.workflow_input['flavor_id']
+            except KeyError:
+                flavor_id = None
+            if flavor_id:
+                server_actions *= nova.get_flavor(flavor_id).vcpus
+            if l.scheduled_execution_time not in dct.keys():
+                dct[l.scheduled_execution_time] = server_actions
+            else:
+                dct[l.scheduled_execution_time] += server_actions
         return dct
 
     @periodic_task.periodic_task(spacing=1, run_immediately=True)

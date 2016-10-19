@@ -60,7 +60,8 @@ def validate_cron_trigger_input(pattern, first_time, count):
 
 def create_cron_trigger(name, workflow_name, workflow_input,
                         workflow_params=None, pattern=None, first_time=None,
-                        count=None, start_time=None, workflow_id=None, trust_id=None):
+                        count=None, start_time=None, workflow_id=None,
+                        trust_id=None):
     if not start_time:
         start_time = datetime.datetime.now()
 
